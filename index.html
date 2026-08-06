@@ -590,6 +590,45 @@ function scheduleYodel(ac,dests,at,dur){
   }
   return master;
 }
+/* Celebration audio: opening fanfare, sparkling bell chimes across the
+   celebration, and (when fireworks are active) bandpassed noise "pops". */
+function scheduleCelebration(ac,dests,at,dur,withFireworks){
+  const master=ac.createGain(); master.gain.value=0.3;
+  dests.forEach(d=>master.connect(d));
+  const N={C5:523.25,E5:659.25,G5:783.99,C6:1046.5,E6:1318.5,G6:1568.0};
+  function tone(f,t0,d,type,vol){
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.type=type; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t0);
+    g.gain.linearRampToValueAtTime(vol,t0+0.02);
+    g.gain.exponentialRampToValueAtTime(0.001,t0+d);
+    o.connect(g); g.connect(master); o.start(t0); o.stop(t0+d+0.05);
+  }
+  // opening fanfare: rising arpeggio into a sustained major chord
+  [N.C5,N.E5,N.G5,N.C6].forEach((f,i)=>tone(f,at+i*0.09,0.25,'square',0.5));
+  [N.C5,N.E5,N.G5].forEach(f=>tone(f,at+0.45,1.1,'triangle',0.45));
+  tone(N.C6,at+0.45,1.1,'triangle',0.35);
+  // sparkling bells, deterministic spacing, through the whole celebration
+  const rnd=mulberry32(7);
+  const bells=[N.C6,N.E6,N.G6,N.G5,N.E5];
+  for(let t=at+0.8; t<at+dur-0.3; t+=0.28+rnd()*0.5){
+    tone(bells[Math.floor(rnd()*bells.length)], t, 0.9, 'sine', 0.16+rnd()*0.12);
+  }
+  // firework pops: short filtered noise bursts
+  if(withFireworks){
+    const len=Math.floor(ac.sampleRate*0.25);
+    const buf=ac.createBuffer(1,len,ac.sampleRate), ch=buf.getChannelData(0);
+    for(let i=0;i<len;i++) ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+    for(let t=at+0.5, k=0; t<at+dur-0.5; t+=0.55, k++){
+      const src=ac.createBufferSource(); src.buffer=buf;
+      const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=800+(k%4)*220;
+      const g=ac.createGain(); g.gain.value=0.22;
+      src.connect(bp); bp.connect(g); g.connect(master);
+      src.start(t);
+    }
+  }
+  return master;
+}
 
 /* ============================================================
    CONTINUOUS PREVIEW
@@ -626,13 +665,22 @@ document.getElementById('btnPreview').addEventListener('click', async ()=>{
   if(busy) return;
   refreshLive();
   if(previewAC){ try{ previewAC.close(); }catch(e){} previewAC=null; }
-  if(liveCfg.mode==='climbing'){
+  const s=liveCfg;
+  const celebrating = s.mode==='climbing' ? (s.fireworks||s.fullPledCeleb) : s.fullPledCeleb;
+  if(s.mode==='climbing' || celebrating){
     previewAC=new (window.AudioContext||window.webkitAudioContext)();
-    scheduleYodel(previewAC,[previewAC.destination], previewAC.currentTime+liveCfg.hold, liveCfg.climbDur);
+    const ct=previewAC.currentTime;
+    if(s.mode==='climbing'){
+      scheduleYodel(previewAC,[previewAC.destination], ct+s.hold, s.climbDur);
+      if(celebrating) scheduleCelebration(previewAC,[previewAC.destination], ct+s.hold+s.climbDur, s.arrive+s.extra, s.fireworks);
+      statusEl.textContent=celebrating?'Previewing with music and celebration…':'Previewing with music…';
+    } else {
+      scheduleCelebration(previewAC,[previewAC.destination], ct+0.05, s.dur, false);
+      statusEl.textContent='Previewing with celebration sound…';
+    }
     const acRef=previewAC;
-    setTimeout(()=>{ if(previewAC===acRef){ try{acRef.close();}catch(e){} previewAC=null; } }, (liveCfg.dur+0.5)*1000);
-    statusEl.textContent='Previewing with music…';
-    setTimeout(()=>{ if(!busy) statusEl.textContent=''; }, (liveCfg.dur+0.5)*1000);
+    setTimeout(()=>{ if(previewAC===acRef){ try{acRef.close();}catch(e){} previewAC=null; } }, (s.dur+0.5)*1000);
+    setTimeout(()=>{ if(!busy) statusEl.textContent=''; }, (s.dur+0.5)*1000);
   } else {
     statusEl.textContent='Resting mode loops silently.';
     setTimeout(()=>{ if(!busy) statusEl.textContent=''; }, 2500);
@@ -736,7 +784,13 @@ document.getElementById('btnVid').addEventListener('click', async ()=>{
       kg.gain.value=0.0001; ka.connect(kg); kg.connect(dest);
       ka.start(); ka.stop(ac.currentTime+s.dur+1.5);
     }
-    if(s.mode==='climbing') scheduleYodel(ac,[dest,ac.destination], ac.currentTime+s.hold, s.climbDur);
+    if(s.mode==='climbing'){
+      scheduleYodel(ac,[dest,ac.destination], ac.currentTime+s.hold, s.climbDur);
+      if(s.fireworks||s.fullPledCeleb)
+        scheduleCelebration(ac,[dest,ac.destination], ac.currentTime+s.hold+s.climbDur, s.arrive+s.extra+1.0, s.fireworks);
+    } else if(s.fullPledCeleb){
+      scheduleCelebration(ac,[dest,ac.destination], ac.currentTime+0.1, s.dur+0.9, false);
+    }
     let rec=null, fmt=null;
     for(const cand of recordingFormats()){
       try{
