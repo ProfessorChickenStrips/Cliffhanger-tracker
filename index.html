@@ -27,15 +27,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --line:#82544C; --line-deep:#5E332C;
-    --maroon:#7A2E3C; --maroon-deep:#5E2531;
-    --cream:#F7F3EA; --silver:#EFECE5; --gold:#C9A24B; --ink:#3A2723;
+    --line:#82544C; --line-deep:#5E332C;          /* campaign artwork line color */
+    --maroon:#7A2E3C; --maroon-deep:#5E2531;      /* survives only as the pledge line */
+    --teal:#2E6276; --teal-deep:#1F4C5C;          /* Holy Trinity wordmark (sampled #3C6B7C, deepened for contrast) */
+    --leaf:#7FA84F; --leaf-dark:#5E8A3C; --leaf-light:#A8C582;  /* tree greens */
+    --cream:#F7F3EA; --silver:#EFECE5; --gold:#C9A24B; --ink:#31393C;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     font-family:'Nunito',system-ui,sans-serif;
     background:
-      radial-gradient(900px 420px at 50% -8%, rgba(122,46,60,.10), transparent 65%),
+      radial-gradient(900px 420px at 50% -8%, rgba(46,98,118,.10), transparent 65%),
       var(--silver);
     color:var(--ink);
     min-height:100vh;
@@ -44,7 +46,7 @@
   header{ text-align:center; margin:6px auto 18px; max-width:1240px;}
   header h1{
     font-family:'Alfa Slab One',serif; font-size:clamp(1.5rem,3.4vw,2.4rem);
-    letter-spacing:.5px; color:var(--maroon-deep);
+    letter-spacing:.5px; color:var(--teal-deep);
   }
   header p{opacity:.75; font-weight:700; margin-top:4px; font-size:.95rem;}
   .wrap{ max-width:1240px; margin:0 auto; display:grid; grid-template-columns:1fr 350px; gap:18px; align-items:start;}
@@ -74,7 +76,7 @@
   }
   .sign h2{
     font-family:'Alfa Slab One',serif; font-size:1.02rem; letter-spacing:1.5px; text-transform:uppercase;
-    color:var(--maroon-deep); text-align:center; margin-bottom:12px;
+    color:var(--teal-deep); text-align:center; margin-bottom:12px;
   }
   .sign h2::after{
     content:""; display:block; width:120px; height:10px; margin:8px auto 0;
@@ -85,7 +87,7 @@
 
   .lever{ display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:14px; user-select:none;}
   .lever .word{ font-weight:800; letter-spacing:1px; font-size:.85rem; text-transform:uppercase; opacity:.45; transition:opacity .2s, color .2s; color:var(--line-deep);}
-  .lever .word.on{ opacity:1; color:var(--maroon-deep);}
+  .lever .word.on{ opacity:1; color:var(--teal-deep);}
   .lever-track{
     width:86px; height:34px; border-radius:17px; position:relative; cursor:pointer;
     background:#fff; border:2.5px solid var(--line);
@@ -94,15 +96,15 @@
   .lever-track:focus-visible{ outline:3px solid var(--gold); outline-offset:2px;}
   .lever-knob{
     position:absolute; top:2px; left:2px; width:25px; height:25px; border-radius:50%;
-    background:radial-gradient(circle at 32% 28%, #A9556A, var(--maroon) 55%, var(--maroon-deep));
-    box-shadow:0 2px 4px rgba(94,51,44,.4);
+    background:radial-gradient(circle at 32% 28%, #4E8AA0, var(--teal) 55%, var(--teal-deep));
+    box-shadow:0 2px 4px rgba(31,76,92,.4);
     transition:left .22s cubic-bezier(.5,1.6,.4,1);
   }
   .lever-track.climb .lever-knob{ left:54px; }
 
   fieldset{ border:2px solid rgba(130,84,76,.5); border-radius:9px; padding:10px 12px 12px; margin-bottom:12px; background:#fff; transition:opacity .2s;}
   fieldset.dim{ opacity:.45;}
-  legend{ font-weight:800; font-size:.8rem; letter-spacing:1px; text-transform:uppercase; padding:0 7px; color:var(--maroon-deep);}
+  legend{ font-weight:800; font-size:.8rem; letter-spacing:1px; text-transform:uppercase; padding:0 7px; color:var(--teal-deep);}
   .row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:7px;}
   .row label{ font-size:.83rem; font-weight:700;}
   .row input{
@@ -119,18 +121,18 @@
   button{
     width:100%; margin-top:8px; padding:11px 10px; border-radius:9px; border:0; cursor:pointer;
     font-family:'Nunito'; font-weight:800; font-size:.92rem; letter-spacing:.4px;
-    color:var(--cream); background:linear-gradient(180deg,#94435A,var(--maroon) 60%,var(--maroon-deep));
-    box-shadow:0 3px 0 var(--maroon-deep), 0 6px 10px rgba(94,37,49,.3);
+    color:#fff; background:linear-gradient(180deg,#3D7A92,var(--teal) 60%,var(--teal-deep));
+    box-shadow:0 3px 0 var(--teal-deep), 0 6px 10px rgba(31,76,92,.3);
     transition:transform .06s;
   }
-  button:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--maroon-deep);}
-  button.secondary{ color:var(--maroon-deep); background:#fff; border:2.5px solid var(--maroon); box-shadow:0 3px 0 rgba(94,37,49,.35);}
+  button:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--teal-deep);}
+  button.secondary{ color:var(--teal-deep); background:#fff; border:2.5px solid var(--teal); box-shadow:0 3px 0 rgba(31,76,92,.35);}
   button:disabled{ opacity:.5; cursor:not-allowed; transform:none;}
   button:focus-visible{ outline:3px solid var(--gold); outline-offset:2px;}
   .progressWrap{ margin-top:10px; height:16px; border-radius:8px; background:#fff; overflow:hidden; border:2px solid var(--line); display:none;}
   .progressWrap.show{display:block;}
-  .progressBar{ height:100%; width:0%; background:linear-gradient(90deg,var(--maroon),#a94b5e); transition:width .15s;}
-  .status{ font-size:.78rem; font-weight:700; margin-top:6px; min-height:1.1em; text-align:center; color:var(--maroon-deep);}
+  .progressBar{ height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--leaf)); transition:width .15s;}
+  .status{ font-size:.78rem; font-weight:700; margin-top:6px; min-height:1.1em; text-align:center; color:var(--teal-deep);}
   .note{ font-size:.74rem; opacity:.85; margin-top:12px; line-height:1.45; font-weight:600; border-top:2px dashed rgba(130,84,76,.4); padding-top:9px;}
   @media (prefers-reduced-motion: reduce){ .lever-knob{transition:none;} }
 </style>
@@ -138,7 +140,7 @@
 <body>
 <header>
   <h1>Cliffhanger Campaign Tracker</h1>
-  <p>A Future with Hope — set your numbers, watch the live preview, download a GIF (silent) or a video with music.</p>
+  <p>Holy Trinity Lutheran Church · A Future with Hope — set your numbers, watch the live preview, download a GIF (silent) or a video with music.</p>
 </header>
 
 <div class="wrap">
@@ -203,6 +205,7 @@ const W=1280,H=720;
 const G={x0:70, x1:1225, ySlopeBase:640, yPeak:95, yBottom:660, yLabel:690};
 const MAX_RET=120, MAX_PLED=600000;
 const LINE='#82544C', LINE_DEEP='#5E332C', MAROON='#7A2E3C', MAROON_DEEP='#5E2531',
+      TEAL='#2E6276', TEAL_DEEP='#1F4C5C', LEAF='#7FA84F', LEAF_DARK='#5E8A3C', LEAF_LIGHT='#A8C582',
       GOLD='#C9A24B', CREAM='#F7F3EA';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,k)=>a+(b-a)*k;
@@ -301,17 +304,43 @@ function drawSky(c,t,lp,celeb){
   }
   c.globalAlpha=1;
 }
-/* Campaign wordmark plate — brands every exported GIF/video */
-function drawWordmark(c){
+/* Church logo plate — drawn into every frame so all exports carry it.
+   Loads same-origin only (foreign origins would taint the canvas and break
+   GIF getImageData). Falls back to a text wordmark if the PNG is missing. */
+const LOGO_PATHS=['holy-trinity-logo.png','assets/holy-trinity-logo.png'];
+const logoImg=new Image();
+let logoReady=false, logoChecked=false;
+async function ensureLogo(){
+  if(logoReady) return true;
+  if(logoChecked) return false;
+  for(const p of LOGO_PATHS){
+    try{ logoImg.src=p; await logoImg.decode(); logoReady=true; return true; }
+    catch(e){}
+  }
+  logoChecked=true;
+  return false;
+}
+ensureLogo(); // warm up for the live preview
+function drawLogoPlate(c){
+  const px=64, py=24, pad=12, lw=300;
+  const lh = (logoReady && logoImg.naturalWidth)
+    ? lw*logoImg.naturalHeight/logoImg.naturalWidth : 62;
+  const w=lw+pad*2, h=lh+pad*2+22;
   c.save();
-  c.fillStyle='rgba(255,255,255,.9)';
-  roundRect(c,64,26,346,62,12); c.fill();
-  c.strokeStyle=LINE; c.lineWidth=2.5; roundRect(c,64,26,346,62,12); c.stroke();
-  c.fillStyle=MAROON_DEEP; c.textAlign='left';
-  c.font="20px 'Alfa Slab One', serif";
-  c.fillText('A  F U T U R E  W I T H  H O P E', 84, 56);
-  c.font='800 12px Nunito, sans-serif'; c.fillStyle='rgba(94,51,44,.75)';
-  c.fillText('C A M P A I G N   P R O G R E S S', 85, 76);
+  c.fillStyle='rgba(255,255,255,.94)';
+  roundRect(c,px,py,w,h,12); c.fill();
+  c.strokeStyle=LINE; c.lineWidth=2.5; roundRect(c,px,py,w,h,12); c.stroke();
+  if(logoReady && logoImg.naturalWidth){
+    c.drawImage(logoImg, px+pad, py+pad, lw, lh);
+  } else {
+    c.fillStyle=TEAL_DEEP; c.textAlign='left';
+    c.font="24px 'Alfa Slab One', serif";
+    c.fillText('HOLY TRINITY', px+pad, py+pad+28);
+    c.font='800 12px Nunito, sans-serif'; c.fillStyle='rgba(49,57,60,.75)';
+    c.fillText('LUTHERAN CHURCH  •  THOUSAND OAKS', px+pad, py+pad+50);
+  }
+  c.font='800 12px Nunito, sans-serif'; c.fillStyle='rgba(130,84,76,.95)'; c.textAlign='left';
+  c.fillText('A  FUTURE  WITH  HOPE   •   CAMPAIGN  PROGRESS', px+pad, py+h-11);
   c.restore();
 }
 function drawMountain(c){
@@ -370,23 +399,23 @@ function drawArtScene(c,xm,animate,celeb,t,lp){
     for(let rr=h.r; rr>16; rr-=17, ai++){
       const breathe = animate||celeb ? 2.2*Math.sin(t*lp*2 + hi*1.3 + ai*0.6) : 0;
       c.globalAlpha = (animate||celeb) ? .7+.3*(0.5+0.5*Math.sin(t*lp*2 + ai)) : .9;
-      c.strokeStyle = celeb && ai%3===0 ? MAROON : LINE;
+      c.strokeStyle = celeb && ai%3===0 ? TEAL : LINE;
       c.lineWidth = 4;
       c.beginPath(); c.arc(h.cx,G.yBottom,Math.max(6,rr+breathe),Math.PI,2*Math.PI); c.stroke();
     }
   });
   c.globalAlpha=1;
-  // Maroon wash over the revealed artwork: the pledged region now reads as a
-  // tinted fill even at email-GIF sizes, not just as line art.
-  const washA = celeb ? .16+.06*(0.5+0.5*Math.sin(t*lp)) : .13;
-  c.fillStyle=`rgba(122,46,60,${washA})`;
+  // Leaf-green wash over the revealed artwork: pledges grow like the tree.
+  // Always-on so progress reads as a fill; pulses gently during celebration.
+  const washA = celeb ? .20+.07*(0.5+0.5*Math.sin(t*lp)) : .16;
+  c.fillStyle=`rgba(127,168,79,${washA})`;
   c.fillRect(G.x0-2,0,W,H);
   if(celeb){
     const rnd=mulberry32(41);
     for(let i=0;i<22;i++){
       const px=G.x0+30+rnd()*1120, py=300+rnd()*300;
       const a=.3+.6*(0.5+0.5*Math.sin(t*lp*2+i*1.7));
-      c.fillStyle = i%3? `rgba(201,162,75,${a})` : `rgba(122,46,60,${a})`;
+      c.fillStyle = i%3? `rgba(201,162,75,${a})` : `rgba(94,138,60,${a})`;
       star(c,px,py,5);
     }
   }
@@ -421,7 +450,7 @@ function limb(c,pts,color,w){
   c.strokeStyle=color; c.lineWidth=w; c.stroke();
 }
 function drawHat(c){ // origin at hat's brim center
-  c.fillStyle=MAROON;
+  c.fillStyle=TEAL;
   c.beginPath(); c.moveTo(-11,-4); c.quadraticCurveTo(0,-18,11,-4); c.closePath(); c.fill();
   c.fillRect(-12,-6,24,4);
   c.fillStyle=GOLD; c.fillRect(-11,-6,22,2.2);
@@ -446,8 +475,8 @@ function drawClimber(c,st,t,lp){
   c.fillStyle=pants; roundRect(c,-10,-32,20,12,3); c.fill();
   c.fillStyle=shirt; roundRect(c,-10,-52,20,22,6); c.fill();
   c.strokeStyle=LINE; c.lineWidth=2; roundRect(c,-10,-52,20,22,6); c.stroke();
-  // straps in campaign maroon
-  c.strokeStyle=MAROON; c.lineWidth=4; c.lineCap='round';
+  // straps in tree green
+  c.strokeStyle=LEAF_DARK; c.lineWidth=4; c.lineCap='round';
   c.beginPath(); c.moveTo(-6,-32); c.lineTo(-4,-50); c.stroke();
   c.beginPath(); c.moveTo( 6,-32); c.lineTo( 4,-50); c.stroke();
   // arms (outlined)
@@ -494,7 +523,7 @@ function drawClimber(c,st,t,lp){
 /* ---- Fireworks of hope (campaign palette) ---- */
 function drawFireworks(c,fwT){
   if(fwT<0) return;
-  const cols=[GOLD,'#7A2E3C','#B5484F','#E8B9C4','#8A5A50'];
+  const cols=[GOLD,TEAL,LEAF,LEAF_LIGHT,'#3D7A92'];
   const gap=0.45, life=1.7;
   const first=Math.max(0,Math.ceil((fwT-life)/gap)), last=Math.floor(fwT/gap);
   for(let i=first;i<=last;i++){
@@ -511,7 +540,7 @@ function drawFireworks(c,fwT){
       const px=bx+Math.cos(a)*R, py=by+Math.sin(a)*R + age*age*42;
       c.beginPath(); c.arc(px,py,2.8,0,7); c.fill();
     }
-    c.globalAlpha=al*0.9; c.fillStyle=MAROON_DEEP;
+    c.globalAlpha=al*0.9; c.fillStyle=TEAL_DEEP;
     star(c,bx,by,5*(1-age/life));
     c.globalAlpha=1;
   }
@@ -529,7 +558,7 @@ function renderFrame(c,s,t){
   drawMaroonLine(c, xm);
   drawSlopeScale(c);
   drawBottomScale(c);
-  drawWordmark(c);
+  drawLogoPlate(c);
   drawClimber(c,st,t,lp);
   drawFireworks(c,st.fwT);
 }
@@ -628,6 +657,7 @@ document.getElementById('btnGif').addEventListener('click', async ()=>{
   const s=snapshot();
   const p=PRESETS[document.getElementById('preset').value];
   setBusy(true,'Loading GIF encoder…');
+  const okLogo=await ensureLogo();
   try{
     const {GIFEncoder,quantize,applyPalette}=await loadGifenc();
     const scale=p.w/W;
@@ -660,7 +690,7 @@ document.getElementById('btnGif').addEventListener('click', async ()=>{
       ? `future-with-hope-resting-${s.restRet}ret-${Math.round(s.restPled/1000)}k.gif`
       : `future-with-hope-climb-${s.lastRet}-to-${s.newRet}ret-${Math.round(s.newPled/1000)}k.gif`;
     download(blob,name);
-    setBusy(false,`GIF ready (${(blob.size/1048576).toFixed(1)} MB). Silent by design — use the video for music.`);
+    setBusy(false,`GIF ready (${(blob.size/1048576).toFixed(1)} MB). Silent by design — use the video for music.`+(okLogo?'':' Note: church logo PNG not found (holy-trinity-logo.png); exported with the text wordmark.'));
   }catch(err){
     console.error(err);
     setBusy(false,'GIF export failed: '+err.message+' (Check your connection; the encoder loads from unpkg.com. If previewing inside Claude, deploy to GitHub Pages and export there.)');
@@ -689,6 +719,7 @@ document.getElementById('btnVid').addEventListener('click', async ()=>{
   }
   const s=snapshot();
   setBusy(true,'Recording video… watch the preview.');
+  const okLogo=await ensureLogo();
   progWrap.classList.remove('show');
   let ac=null, combined=null;
   try{
@@ -726,7 +757,7 @@ document.getElementById('btnVid').addEventListener('click', async ()=>{
     if(!blob.size) throw new Error('The browser produced an empty recording.');
     const name=(s.mode==='resting'?'future-with-hope-resting.':'future-with-hope-climb.')+fmt.ext;
     download(blob,name);
-    setBusy(false,`${fmt.ext.toUpperCase()} video ready (${(blob.size/1048576).toFixed(1)} MB). In PowerPoint: Insert → Video.`);
+    setBusy(false,`${fmt.ext.toUpperCase()} video ready (${(blob.size/1048576).toFixed(1)} MB). In PowerPoint: Insert → Video.`+(okLogo?'':' Note: church logo PNG not found (holy-trinity-logo.png); exported with the text wordmark.'));
   }catch(err){
     console.error(err);
     if(ac){ try{ await ac.close(); }catch(e){} }
