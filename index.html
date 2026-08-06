@@ -1,146 +1,145 @@
 <!DOCTYPE html>
 <!--
-  CLIFFHANGER FUNDRAISING GIF GENERATOR
-  =====================================
+  CLIFFHANGER FUNDRAISING GIF GENERATOR — "A Future with Hope" edition
+  ====================================================================
   Single-file app. Publish on GitHub Pages:
-    1. Create a repo (e.g. "cliffhanger-tracker") and commit this file as index.html
-    2. Repo Settings -> Pages -> Source: "Deploy from a branch" -> main / root -> Save
-    3. Site appears at https://<username>.github.io/cliffhanger-tracker/
+    1. Commit this file as index.html at the repo root (uploading a file with the
+       same name replaces the old one).
+    2. Repo Settings -> Pages -> Deploy from a branch -> main / (root) -> Save
   Exports:
     - Animated GIF (silent) via gif.js  — for email, websites, social media
     - WebM video WITH music via MediaRecorder — for PowerPoint (Insert > Video)
-      (PowerPoint 2016+ / 365 plays WebM; if yours doesn't, convert WebM->MP4 with any free converter)
   Notes:
     - GIFs can never contain audio (format limitation).
-    - Safari: video export may be unavailable (MediaRecorder canvas support varies). GIF export works.
+    - Safari: video export may be unavailable. GIF export works.
+  Design: campaign artwork (line-art sun with rays over concentric arc hills)
+  is redrawn as vector art in the scene — the sky carries the sun motif and the
+  arc hills are the maroon scene revealed as pledges grow.
 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cliffhanger Campaign Tracker — GIF Generator</title>
+<title>Cliffhanger Campaign Tracker — A Future with Hope</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <style>
   :root{
-    --pine:#22392C; --pine-deep:#16281E;
-    --wood:#7A5230; --wood-dark:#5A3A1F; --wood-light:#96693F;
-    --cream:#F3E7CB; --brass:#C9A24B;
-    --maroon:#7A2E3C; --maroon-deep:#4A1B29;
-    --sky:#BFE0F0;
+    --line:#82544C;        /* campaign line-art brown-maroon */
+    --line-deep:#5E332C;
+    --maroon:#7A2E3C;      /* campaign maroon */
+    --maroon-deep:#5E2531;
+    --cream:#F7F3EA;
+    --silver:#EFECE5;
+    --gold:#C9A24B;
+    --ink:#3A2723;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
     font-family:'Nunito',system-ui,sans-serif;
     background:
-      radial-gradient(1200px 500px at 50% -10%, #2E4A39 0%, transparent 60%),
-      var(--pine-deep);
-    color:var(--cream);
+      radial-gradient(900px 420px at 50% -8%, rgba(122,46,60,.10), transparent 65%),
+      var(--silver);
+    color:var(--ink);
     min-height:100vh;
     padding:18px 18px 40px;
   }
   header{ text-align:center; margin:6px auto 18px; max-width:1240px;}
   header h1{
-    font-family:'Alfa Slab One',serif; font-size:clamp(1.5rem,3.4vw,2.5rem);
-    letter-spacing:.5px; color:var(--cream);
-    text-shadow:0 3px 0 var(--pine-deep), 0 5px 12px rgba(0,0,0,.45);
+    font-family:'Alfa Slab One',serif; font-size:clamp(1.5rem,3.4vw,2.4rem);
+    letter-spacing:.5px; color:var(--maroon-deep);
   }
-  header p{opacity:.75; font-weight:600; margin-top:4px; font-size:.95rem;}
+  header p{opacity:.75; font-weight:700; margin-top:4px; font-size:.95rem;}
   .wrap{ max-width:1240px; margin:0 auto; display:grid; grid-template-columns:1fr 350px; gap:18px; align-items:start;}
   @media (max-width:980px){ .wrap{grid-template-columns:1fr;} }
 
   .stage{
-    background:var(--pine); border-radius:14px; padding:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.06);
+    background:#fff; border-radius:12px; padding:12px;
+    border:3px solid var(--line);
+    box-shadow:0 0 0 6px var(--cream), 0 0 0 8px var(--line), 0 14px 30px rgba(94,51,44,.18);
   }
-  canvas#scene{ width:100%; height:auto; display:block; border-radius:8px; background:#fff;}
-  .stage .caption{ font-size:.8rem; opacity:.65; margin-top:8px; text-align:center; font-weight:600;}
+  canvas#scene{ width:100%; height:auto; display:block; border-radius:6px; background:#fff;}
+  .stage .caption{ font-size:.8rem; opacity:.7; margin-top:8px; text-align:center; font-weight:700;}
 
-  /* ---- Wooden trail-sign control panel ---- */
+  /* ---- Campaign-styled control card ---- */
   .sign{
     border-radius:12px; padding:16px 16px 18px; position:relative;
-    background:
-      repeating-linear-gradient(93deg, rgba(0,0,0,.10) 0 2px, transparent 2px 26px),
-      repeating-linear-gradient(88deg, rgba(255,255,255,.05) 0 1px, transparent 1px 34px),
-      linear-gradient(180deg, var(--wood-light), var(--wood) 30%, var(--wood-dark));
-    border:5px solid var(--wood-dark);
-    box-shadow: inset 0 2px 6px rgba(255,235,200,.25), inset 0 -6px 12px rgba(0,0,0,.35), 0 10px 26px rgba(0,0,0,.45);
+    background:var(--cream);
+    border:3px solid var(--line);
+    box-shadow:0 0 0 6px #fff, 0 0 0 8px var(--line), 0 14px 30px rgba(94,51,44,.18);
   }
-  .sign::before,.sign::after{ /* nail heads */
-    content:""; position:absolute; width:11px; height:11px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #E8D9B8, #7d6a47 55%, #3c3221);
-    top:10px; box-shadow:0 1px 2px rgba(0,0,0,.5);
-  }
-  .sign::before{left:10px;} .sign::after{right:10px;}
   .sign h2{
-    font-family:'Alfa Slab One',serif; font-size:1.05rem; letter-spacing:1.5px; text-transform:uppercase;
-    color:var(--cream); text-align:center; margin-bottom:12px;
-    text-shadow:0 2px 0 rgba(0,0,0,.45);
+    font-family:'Alfa Slab One',serif; font-size:1.02rem; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--maroon-deep); text-align:center; margin-bottom:12px;
+  }
+  .sign h2::after{
+    content:""; display:block; width:120px; height:10px; margin:8px auto 0;
+    background:
+      radial-gradient(circle at 50% 100%, transparent 0 2px, var(--line) 2px 3.5px, transparent 3.5px 6px, var(--line) 6px 7.5px, transparent 7.5px) bottom/24px 10px repeat-x;
+    opacity:.8;
   }
 
-  /* Carved lever toggle */
   .lever{ display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:14px; user-select:none;}
-  .lever .word{ font-weight:800; letter-spacing:1px; font-size:.85rem; text-transform:uppercase; opacity:.55; transition:opacity .2s, color .2s; text-shadow:0 1px 0 rgba(0,0,0,.4);}
-  .lever .word.on{ opacity:1; color:#FFE9A8;}
+  .lever .word{ font-weight:800; letter-spacing:1px; font-size:.85rem; text-transform:uppercase; opacity:.45; transition:opacity .2s, color .2s; color:var(--line-deep);}
+  .lever .word.on{ opacity:1; color:var(--maroon-deep);}
   .lever-track{
     width:86px; height:34px; border-radius:17px; position:relative; cursor:pointer;
-    background:linear-gradient(180deg,#2b1c0e,#4a3218);
-    box-shadow: inset 0 3px 6px rgba(0,0,0,.7), inset 0 -1px 0 rgba(255,255,255,.12);
-    border:2px solid #33220f;
+    background:#fff; border:2.5px solid var(--line);
+    box-shadow: inset 0 2px 5px rgba(94,51,44,.25);
   }
   .lever-knob{
-    position:absolute; top:2px; left:2px; width:28px; height:28px; border-radius:50%;
-    background:radial-gradient(circle at 32% 28%, #F4E0A5, var(--brass) 55%, #7d5b1e);
-    box-shadow:0 2px 4px rgba(0,0,0,.6), inset 0 -2px 3px rgba(0,0,0,.35);
+    position:absolute; top:2px; left:2px; width:25px; height:25px; border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, #A9556A, var(--maroon) 55%, var(--maroon-deep));
+    box-shadow:0 2px 4px rgba(94,51,44,.4);
     transition:left .22s cubic-bezier(.5,1.6,.4,1);
   }
   .lever-track.climb .lever-knob{ left:54px; }
 
-  fieldset{ border:2px solid rgba(0,0,0,.28); border-radius:9px; padding:10px 12px 12px; margin-bottom:12px; background:rgba(0,0,0,.14); transition:opacity .2s;}
+  fieldset{ border:2px solid rgba(130,84,76,.5); border-radius:9px; padding:10px 12px 12px; margin-bottom:12px; background:#fff; transition:opacity .2s;}
   fieldset.dim{ opacity:.45;}
-  legend{ font-weight:800; font-size:.8rem; letter-spacing:1px; text-transform:uppercase; padding:0 7px; color:#FFE9A8; text-shadow:0 1px 0 rgba(0,0,0,.5);}
+  legend{ font-weight:800; font-size:.8rem; letter-spacing:1px; text-transform:uppercase; padding:0 7px; color:var(--maroon-deep);}
   .row{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:7px;}
-  .row label{ font-size:.83rem; font-weight:700; text-shadow:0 1px 0 rgba(0,0,0,.35);}
+  .row label{ font-size:.83rem; font-weight:700;}
   .row input{
-    width:110px; padding:6px 8px; border-radius:6px; border:2px solid #33220f;
-    background:var(--cream); color:#2c1d0c; font-family:'Nunito'; font-weight:800; font-size:.9rem; text-align:right;
+    width:110px; padding:6px 8px; border-radius:6px; border:2px solid var(--line);
+    background:#fff; color:var(--ink); font-family:'Nunito'; font-weight:800; font-size:.9rem; text-align:right;
   }
-  .row input:focus{ outline:3px solid var(--brass); outline-offset:1px;}
-  .hint{ font-size:.72rem; opacity:.7; margin-top:2px; font-weight:600;}
+  .row input:focus{ outline:3px solid var(--gold); outline-offset:1px;}
+  .hint{ font-size:.72rem; opacity:.7; margin-top:4px; font-weight:600;}
 
   .presetRow{ display:flex; align-items:center; gap:8px; margin:4px 0 12px;}
   .presetRow label{font-size:.83rem; font-weight:800;}
-  select{ flex:1; padding:6px; border-radius:6px; border:2px solid #33220f; background:var(--cream); color:#2c1d0c; font-weight:800; font-family:'Nunito';}
+  select{ flex:1; padding:6px; border-radius:6px; border:2px solid var(--line); background:#fff; color:var(--ink); font-weight:800; font-family:'Nunito';}
 
   button{
     width:100%; margin-top:8px; padding:11px 10px; border-radius:9px; border:0; cursor:pointer;
     font-family:'Nunito'; font-weight:800; font-size:.92rem; letter-spacing:.4px;
-    color:#2c1d0c; background:linear-gradient(180deg,#FFE9A8,var(--brass));
-    box-shadow:0 3px 0 #7d5b1e, 0 6px 10px rgba(0,0,0,.35);
+    color:var(--cream); background:linear-gradient(180deg,#94435A,var(--maroon) 60%,var(--maroon-deep));
+    box-shadow:0 3px 0 var(--maroon-deep), 0 6px 10px rgba(94,37,49,.3);
     transition:transform .06s;
   }
-  button:active{ transform:translateY(2px); box-shadow:0 1px 0 #7d5b1e;}
-  button.secondary{ background:linear-gradient(180deg,#e8dcc0,#c9bb96); box-shadow:0 3px 0 #8d8163, 0 6px 10px rgba(0,0,0,.3);}
+  button:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--maroon-deep);}
+  button.secondary{ color:var(--maroon-deep); background:#fff; border:2.5px solid var(--maroon); box-shadow:0 3px 0 rgba(94,37,49,.35);}
   button:disabled{ opacity:.5; cursor:not-allowed; transform:none;}
-  .progressWrap{ margin-top:10px; height:16px; border-radius:8px; background:rgba(0,0,0,.4); overflow:hidden; border:2px solid #33220f; display:none;}
+  .progressWrap{ margin-top:10px; height:16px; border-radius:8px; background:#fff; overflow:hidden; border:2px solid var(--line); display:none;}
   .progressWrap.show{display:block;}
   .progressBar{ height:100%; width:0%; background:linear-gradient(90deg,var(--maroon),#a94b5e); transition:width .15s;}
-  .status{ font-size:.78rem; font-weight:700; margin-top:6px; min-height:1.1em; text-align:center;}
-  .note{ font-size:.74rem; opacity:.8; margin-top:12px; line-height:1.45; font-weight:600; border-top:1px dashed rgba(255,255,255,.25); padding-top:9px;}
+  .status{ font-size:.78rem; font-weight:700; margin-top:6px; min-height:1.1em; text-align:center; color:var(--maroon-deep);}
+  .note{ font-size:.74rem; opacity:.85; margin-top:12px; line-height:1.45; font-weight:600; border-top:2px dashed rgba(130,84,76,.4); padding-top:9px;}
   @media (prefers-reduced-motion: reduce){ .lever-knob{transition:none;} }
 </style>
 </head>
 <body>
 <header>
   <h1>Cliffhanger Campaign Tracker</h1>
-  <p>Set your numbers, preview the climb, download a GIF (silent) or a video with music.</p>
+  <p>A Future with Hope — set your numbers, preview the climb, download a GIF (silent) or a video with music.</p>
 </header>
 
 <div class="wrap">
   <div class="stage">
-    <canvas id="scene" width="1280" height="720" aria-label="Animated mountain climber fundraising scene"></canvas>
-    <div class="caption">Slope = returns (0–120) &nbsp;•&nbsp; Bottom scale &amp; maroon scene = pledged ($0–$600k)</div>
+    <canvas id="scene" width="1280" height="720" aria-label="Animated mountain climber fundraising scene in the campaign's line-art style"></canvas>
+    <div class="caption">Slope = returns (0–120) &nbsp;•&nbsp; Bottom scale &amp; revealed artwork = pledged ($0–$600k)</div>
   </div>
 
   <aside class="sign" aria-label="Controls">
@@ -167,7 +166,7 @@
       <div class="row"><label for="newRet">New return total</label><input id="newRet" type="number" min="0" step="1" value="45"></div>
       <div class="row"><label for="lastPled">Last week pledged ($)</label><input id="lastPled" type="number" min="0" step="1000" value="150000"></div>
       <div class="row"><label for="newPled">This week pledged ($)</label><input id="newPled" type="number" min="0" step="1000" value="210000"></div>
-      <div class="hint">3s hold → climb (≤8s) → arrival. 120 returns = fireworks; $600k = celebration scene.</div>
+      <div class="hint">3s hold → climb (≤8s) → arrival. 120 returns = fireworks; $600k = celebration.</div>
     </fieldset>
 
     <div class="presetRow">
@@ -186,7 +185,7 @@
     <div class="status" id="status"></div>
 
     <div class="note">
-      GIFs are always silent — that's a limitation of the GIF format itself. The video download carries the yodeling music: in PowerPoint use <b>Insert → Video</b>. GIFs go straight into emails, websites, and social posts as images. Tip for Outlook desktop recipients: only the first frame shows, which is why every animation opens on a readable scene.
+      GIFs are always silent — a limitation of the GIF format itself. The video download carries the yodeling music: in PowerPoint use <b>Insert → Video</b>. GIFs go straight into emails, websites, and social posts as images.
     </div>
   </aside>
 </div>
@@ -199,6 +198,8 @@
 const W=1280,H=720;
 const G={x0:70, x1:1225, ySlopeBase:640, yPeak:95, yBottom:660, yLabel:690};
 const MAX_RET=120, MAX_PLED=600000;
+const LINE='#82544C', LINE_DEEP='#5E332C', MAROON='#7A2E3C', MAROON_DEEP='#5E2531',
+      GOLD='#C9A24B', CREAM='#F7F3EA';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,k)=>a+(b-a)*k;
 const easeIO=k=>k<0.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
@@ -240,11 +241,10 @@ function snapshot(){
   }
   return s;
 }
-/* returns {ret, pled, sway, gaitPh, celebT (maroon), fwT (fireworks), amazed} at time t */
 function stateAt(s,t){
   if(s.mode==='resting'){
     return {ret:s.restRet, pled:s.restPled, sway:true, gaitPh:0,
-            celebT:s.fullPledCeleb?t:-1, fwT:-1, amazed:false};
+            celebT:s.fullPledCeleb?t:-1, fwT:-1, amazed:false, animScene:false};
   }
   const tc=s.hold, te=s.hold+s.climbDur;
   if(t<tc)  return {ret:s.lastRet, pled:s.lastPled, sway:true, gaitPh:0, celebT:-1, fwT:-1, amazed:false, animScene:false};
@@ -260,44 +260,46 @@ function stateAt(s,t){
 }
 
 /* ============================================================
-   DRAWING
+   DRAWING — campaign line-art style
 ============================================================ */
-function drawSky(c){
+/* Sky: silver-cream field with the campaign sun and radiating rays */
+function drawSky(c,t,lp,celeb){
   const g=c.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,'#A8D4EC'); g.addColorStop(.55,'#D8ECF7'); g.addColorStop(1,'#F2F8FB');
+  g.addColorStop(0,'#F2EFE9'); g.addColorStop(.6,'#F6F4EF'); g.addColorStop(1,'#FBFAF7');
   c.fillStyle=g; c.fillRect(0,0,W,H);
-  c.fillStyle='rgba(255,255,255,.85)';
-  cloud(c,220,120,1.0); cloud(c,560,80,0.75); cloud(c,930,150,0.9);
-}
-function cloud(c,x,y,s){
-  c.beginPath();
-  c.arc(x,y,26*s,0,7); c.arc(x+30*s,y-10*s,20*s,0,7); c.arc(x+58*s,y,24*s,0,7);
-  c.arc(x+30*s,y+10*s,22*s,0,7); c.fill();
+  const sx=330, sy=165, r=88, nRays=14;
+  c.strokeStyle=LINE; c.lineWidth=5; c.lineCap='round';
+  c.globalAlpha=.85;
+  c.beginPath(); c.arc(sx,sy,r,0,7); c.stroke();
+  const rot = celeb ? (2*Math.PI/nRays)*(t/(2*Math.PI/lp)) : 0; // one ray-step per loop
+  for(let i=0;i<nRays;i++){
+    const a=rot + i*2*Math.PI/nRays + Math.PI/nRays;
+    const len= (i%2? 150:230) + (celeb? 18*Math.sin(t*lp*2+i):0);
+    c.globalAlpha = .55 + (celeb? .3*(0.5+0.5*Math.sin(t*lp*2+i)) : 0);
+    c.beginPath();
+    c.moveTo(sx+Math.cos(a)*(r+16), sy+Math.sin(a)*(r+16));
+    c.lineTo(sx+Math.cos(a)*(r+16+len), sy+Math.sin(a)*(r+16+len));
+    c.stroke();
+  }
+  c.globalAlpha=1;
 }
 function drawMountain(c){
-  // white body under the slope
   c.beginPath();
   c.moveTo(G.x0,G.yBottom); c.lineTo(G.x0,G.ySlopeBase);
   c.lineTo(G.x1,G.yPeak); c.lineTo(G.x1+34,G.yBottom); c.closePath();
   c.fillStyle='#FFFFFF'; c.fill();
-  // right cliff shading
-  c.beginPath(); c.moveTo(G.x1,G.yPeak); c.lineTo(G.x1+34,G.yBottom); c.lineTo(G.x1+10,G.yBottom);
-  c.closePath(); c.fillStyle='rgba(140,160,175,.25)'; c.fill();
-  // slope edge
+  // right cliff line
+  c.strokeStyle=LINE; c.lineWidth=3;
+  c.beginPath(); c.moveTo(G.x1,G.yPeak); c.lineTo(G.x1+34,G.yBottom); c.stroke();
+  // slope edge in campaign line color
   c.beginPath(); c.moveTo(G.x0,G.ySlopeBase); c.lineTo(G.x1,G.yPeak);
-  c.strokeStyle='#8FA3B0'; c.lineWidth=3; c.stroke();
-  // faint crevices
-  c.strokeStyle='rgba(150,170,185,.35)'; c.lineWidth=2;
-  [[300,60],[560,90],[820,70],[1040,55]].forEach(([vx,len])=>{
-    const x=vx,y=slopeY(x);
-    c.beginPath(); c.moveTo(x,y+14); c.lineTo(x-len*0.3,y+len); c.stroke();
-  });
+  c.strokeStyle=LINE_DEEP; c.lineWidth=4; c.stroke();
 }
 function drawSlopeScale(c){
-  c.font='700 15px Nunito, sans-serif'; c.fillStyle='rgba(55,80,95,.6)';
-  c.strokeStyle='rgba(55,80,95,.55)'; c.textAlign='center';
+  c.font='700 15px Nunito, sans-serif'; c.fillStyle='rgba(94,51,44,.65)';
+  c.strokeStyle='rgba(94,51,44,.6)'; c.textAlign='center';
   const ang=Math.atan2(G.yPeak-G.ySlopeBase, G.x1-G.x0);
-  const nx=Math.sin(ang), ny=-Math.cos(ang); // normal pointing up-left of slope
+  const nx=Math.sin(ang), ny=-Math.cos(ang);
   for(let v=0;v<=MAX_RET;v+=10){
     const x=slopeX(v),y=slopeY(x), major=v%20===0, L=major?12:7;
     c.lineWidth=major?2.5:1.5;
@@ -306,95 +308,62 @@ function drawSlopeScale(c){
   }
 }
 function drawBottomScale(c){
-  c.strokeStyle='rgba(70,60,55,.75)'; c.lineWidth=2.5;
+  c.strokeStyle='rgba(94,51,44,.8)'; c.lineWidth=2.5;
   c.beginPath(); c.moveTo(G.x0-4,G.yBottom); c.lineTo(G.x1+8,G.yBottom); c.stroke();
-  c.font='800 16px Nunito, sans-serif'; c.fillStyle='rgba(70,60,55,.8)'; c.textAlign='center';
+  c.font='800 16px Nunito, sans-serif'; c.fillStyle='rgba(94,51,44,.85)'; c.textAlign='center';
   for(let m=0;m<=600;m+=100){
     const x=pledX(m*1000);
     c.beginPath(); c.moveTo(x,G.yBottom); c.lineTo(x,G.yBottom+7); c.stroke();
     c.fillText(m===0?'$0':'$'+m+'k', x, G.yLabel+8);
   }
 }
-/* Maroon "A Future with Hope" mountainside scene, revealed left of xm.
-   animate: gentle life; celeb: full celebration intensity. lp = 2*PI/loopDur */
-function drawMaroonScene(c,xm,animate,celeb,t,lp){
+/* The campaign's concentric arc hills, revealed left of xm.
+   Hills occlude back-to-front exactly like the artwork. */
+const HILLS=[
+  {cx:150,  r:200},
+  {cx:640,  r:225},
+  {cx:395,  r:245},
+  {cx:1105, r:215},
+  {cx:865,  r:265}
+];
+function drawArtScene(c,xm,animate,celeb,t,lp){
   if(xm<=G.x0+1) return;
   c.save();
   c.beginPath();
   c.moveTo(G.x0,G.yBottom); c.lineTo(G.x0,G.ySlopeBase);
   c.lineTo(xm,slopeY(xm)); c.lineTo(xm,G.yBottom); c.closePath();
   c.clip();
-  // backdrop
-  const g=c.createLinearGradient(0,80,0,G.yBottom);
-  g.addColorStop(0,'#8A3A4C'); g.addColorStop(.5,'#6A2536'); g.addColorStop(1,'#4A1B29');
-  c.fillStyle=g; c.fillRect(G.x0-2,0,W,H);
-  // rising sun of hope
-  const sx=265, sy=330;
-  if(animate||celeb){
-    c.save(); c.translate(sx,sy); c.rotate((t*lp)/12);
-    c.strokeStyle='rgba(232,185,196,.30)'; c.lineWidth=7;
-    for(let i=0;i<12;i++){ const a=i*Math.PI/6;
-      c.beginPath(); c.moveTo(Math.cos(a)*62,Math.sin(a)*62); c.lineTo(Math.cos(a)*110,Math.sin(a)*110); c.stroke(); }
-    c.restore();
+  // soft maroon wash grows with celebration
+  if(celeb){
+    const pulse=.10+.05*(0.5+0.5*Math.sin(t*lp));
+    c.fillStyle=`rgba(122,46,60,${pulse})`;
+    c.fillRect(G.x0,0,W,H);
   }
-  let grad=c.createRadialGradient(sx,sy,5,sx,sy,120);
-  grad.addColorStop(0,'#F3CFDA'); grad.addColorStop(.4,'rgba(232,185,196,.55)'); grad.addColorStop(1,'rgba(232,185,196,0)');
-  c.fillStyle=grad; c.beginPath(); c.arc(sx,sy,120,0,7); c.fill();
-  c.fillStyle='#EEC2CF'; c.beginPath(); c.arc(sx,sy,44,0,7); c.fill();
-  // far hills
-  c.fillStyle='#5E2235';
-  c.beginPath(); c.moveTo(G.x0-2,540);
-  c.bezierCurveTo(260,455, 470,560, 700,495);
-  c.bezierCurveTo(900,440, 1080,540, 1240,505);
-  c.lineTo(1240,G.yBottom); c.lineTo(G.x0-2,G.yBottom); c.closePath(); c.fill();
-  // near meadow
-  c.fillStyle='#431826';
-  c.beginPath(); c.moveTo(G.x0-2,600);
-  c.bezierCurveTo(300,575, 620,615, 900,588);
-  c.bezierCurveTo(1080,572, 1180,600, 1240,592);
-  c.lineTo(1240,G.yBottom); c.lineTo(G.x0-2,G.yBottom); c.closePath(); c.fill();
-  // pines on the near meadow
-  for(let i=0;i<10;i++){
-    const px=130+i*112, base=596-10*Math.sin(i*1.3);
-    const sway=(animate||celeb)?Math.sin(t*lp+i)*0.05:0;
-    c.save(); c.translate(px,base); c.rotate(sway);
-    c.fillStyle='#2E0F18';
-    for(let l=0;l<3;l++){ const w=30-l*7, hh=26-l*4, yy=-l*18;
-      c.beginPath(); c.moveTo(-w,yy); c.lineTo(0,yy-hh); c.lineTo(w,yy); c.closePath(); c.fill(); }
-    c.strokeStyle='rgba(243,207,218,.35)'; c.lineWidth=2;
-    c.beginPath(); c.moveTo(2,-8); c.lineTo(16,-52); c.stroke();
-    c.restore();
-  }
-  if(animate||celeb){
-    // circling birds (loop-safe: closed orbits)
-    c.strokeStyle='rgba(243,207,218,.85)'; c.lineWidth=3; c.lineCap='round';
-    for(let i=0;i<3;i++){
-      const bx=340+i*230+46*Math.sin(t*lp+i*2.1);
-      const by=200+26*Math.sin(2*t*lp+i);
-      const f=Math.sin(t*lp*4+i)*4;
-      c.beginPath(); c.moveTo(bx-12,by+f); c.quadraticCurveTo(bx-4,by-7,bx,by);
-      c.quadraticCurveTo(bx+4,by-7,bx+12,by+f); c.stroke();
+  c.lineCap='round';
+  HILLS.forEach((h,hi)=>{
+    // white fill occludes hills behind, as in the artwork
+    c.beginPath(); c.arc(h.cx,G.yBottom,h.r,Math.PI,2*Math.PI); c.closePath();
+    c.fillStyle = celeb ? 'rgba(255,252,248,.92)' : '#FFFFFF';
+    c.fill();
+    let ai=0;
+    for(let rr=h.r; rr>16; rr-=17, ai++){
+      const breathe = animate||celeb ? 2.2*Math.sin(t*lp*2 + hi*1.3 + ai*0.6) : 0;
+      c.globalAlpha = (animate||celeb) ? .7+.3*(0.5+0.5*Math.sin(t*lp*2 + ai)) : .9;
+      c.strokeStyle = celeb && ai%3===0 ? MAROON : LINE;
+      c.lineWidth = 4;
+      c.beginPath(); c.arc(h.cx,G.yBottom,Math.max(6,rr+breathe),Math.PI,2*Math.PI); c.stroke();
     }
-    // sparkles
+  });
+  c.globalAlpha=1;
+  if(celeb){
+    // golden sparkle stars drifting over the hills
     const rnd=mulberry32(41);
-    for(let i=0;i<26;i++){
-      const px=G.x0+30+rnd()*1100, py=140+rnd()*430;
-      const a=.25+.6*(0.5+0.5*Math.sin(t*lp*2+i*1.7));
-      c.fillStyle=`rgba(243,207,218,${celeb?a:a*.55})`;
-      star(c,px,py,celeb?5:3.4);
+    for(let i=0;i<22;i++){
+      const px=G.x0+30+rnd()*1120, py=300+rnd()*300;
+      const a=.3+.6*(0.5+0.5*Math.sin(t*lp*2+i*1.7));
+      c.fillStyle = i%3? `rgba(201,162,75,${a})` : `rgba(122,46,60,${a})`;
+      star(c,px,py,5);
     }
-  }
-  if(celeb){ // sweeping light rays across the whole scene
-    c.save(); c.globalCompositeOperation='lighter';
-    for(let i=0;i<4;i++){
-      const a=-.9+.5*Math.sin(t*lp+i*1.9);
-      c.save(); c.translate(sx,sy); c.rotate(a+i*0.6);
-      const lg=c.createLinearGradient(0,0,1100,0);
-      lg.addColorStop(0,'rgba(243,207,218,.16)'); lg.addColorStop(1,'rgba(243,207,218,0)');
-      c.fillStyle=lg; c.beginPath(); c.moveTo(0,0); c.lineTo(1100,-60); c.lineTo(1100,60); c.closePath(); c.fill();
-      c.restore();
-    }
-    c.restore();
   }
   c.restore();
 }
@@ -407,20 +376,20 @@ function star(c,x,y,r){
 function drawMaroonLine(c,xm){
   if(xm<=G.x0+0.5) return;
   const yTop=slopeY(xm);
-  c.strokeStyle='rgba(122,46,60,.28)'; c.lineWidth=11;
+  c.strokeStyle='rgba(94,37,49,.22)'; c.lineWidth=11;
   c.beginPath(); c.moveTo(xm,G.yBottom-1); c.lineTo(xm,yTop); c.stroke();
-  c.strokeStyle='#7A2E3C'; c.lineWidth=5;
+  c.strokeStyle=MAROON_DEEP; c.lineWidth=5;
   c.beginPath(); c.moveTo(xm,G.yBottom-1); c.lineTo(xm,yTop); c.stroke();
 }
-/* In-scene wooden mode sign planted on the slope */
+/* In-scene sign in the campaign style */
 function drawModeSign(c){
   const x=slopeX(7), y=slopeY(slopeX(7));
   c.save(); c.translate(x,y);
-  c.strokeStyle='#5A3A1F'; c.lineWidth=6;
+  c.strokeStyle=LINE_DEEP; c.lineWidth=5;
   c.beginPath(); c.moveTo(0,0); c.lineTo(0,-46); c.stroke();
-  c.fillStyle='#7A5230'; c.strokeStyle='#4a2f16'; c.lineWidth=2.5;
+  c.fillStyle=CREAM; c.strokeStyle=LINE_DEEP; c.lineWidth=3;
   roundRect(c,-44,-78,88,30,5); c.fill(); c.stroke();
-  c.fillStyle='#F3E7CB'; c.font="17px 'Alfa Slab One', serif"; c.textAlign='center';
+  c.fillStyle=MAROON_DEEP; c.font="17px 'Alfa Slab One', serif"; c.textAlign='center';
   c.fillText(mode==='climbing'?'CLIMB!':'REST', 0,-56);
   c.restore();
 }
@@ -429,15 +398,15 @@ function roundRect(c,x,y,w,h,r){
   c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
   c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
 }
-/* ---- Climber ---- */
+/* ---- Climber (campaign palette) ---- */
 function drawClimber(c,st,t,lp){
   const x=slopeX(st.ret), y=slopeY(x)+2;
-  const tilt = st.sway ? Math.sin(2*Math.PI*t/2)*0.10 : 0; // 2s period => seamless
+  const tilt = st.sway ? Math.sin(2*Math.PI*t/2)*0.10 : 0;
   const bounce = st.amazed ? -6*Math.abs(Math.sin(t*3)) : 0;
   c.save(); c.translate(x,y+bounce); c.rotate(tilt);
-  const skin='#F2C9A0', shirt='#F6EEDA', pants='#7B4B22', dark='#3E2A1A';
-  // legs
+  const skin='#F2C9A0', shirt='#FFFDF8', pants=LINE_DEEP, dark='#3A2723';
   const gp=st.gaitPh, sw=st.gaitPh?Math.sin(gp):0;
+  // legs
   c.strokeStyle=dark; c.lineWidth=6; c.lineCap='round';
   c.beginPath(); c.moveTo(0,-24); c.lineTo(-7+8*sw, -2-4*Math.max(0,sw)); c.stroke();
   c.beginPath(); c.moveTo(0,-24); c.lineTo( 7-8*sw, -2-4*Math.max(0,-sw)); c.stroke();
@@ -448,13 +417,13 @@ function drawClimber(c,st,t,lp){
   // shorts + torso
   c.fillStyle=pants; roundRect(c,-10,-32,20,12,3); c.fill();
   c.fillStyle=shirt; roundRect(c,-10,-52,20,22,6); c.fill();
-  // lederhosen straps
-  c.strokeStyle=pants; c.lineWidth=4;
+  c.strokeStyle=LINE; c.lineWidth=2; roundRect(c,-10,-52,20,22,6); c.stroke();
+  // straps in campaign maroon
+  c.strokeStyle=MAROON; c.lineWidth=4;
   c.beginPath(); c.moveTo(-6,-32); c.lineTo(-4,-50); c.stroke();
   c.beginPath(); c.moveTo( 6,-32); c.lineTo( 4,-50); c.stroke();
   // arms
-  c.strokeStyle=shirt===undefined?dark:'#E7D9B8'; c.strokeStyle='#D9C79E';
-  c.lineWidth=5.5;
+  c.strokeStyle='#E9DFC9'; c.lineWidth=5.5;
   if(st.amazed){
     c.beginPath(); c.moveTo(-9,-48); c.lineTo(-20,-64); c.stroke();
     c.beginPath(); c.moveTo( 9,-48); c.lineTo( 20,-64); c.stroke();
@@ -463,53 +432,52 @@ function drawClimber(c,st,t,lp){
     c.beginPath(); c.arc( 21,-65,3.4,0,7); c.fill();
   } else {
     const asw=st.gaitPh?-sw:0;
-    // left arm to alpenstock
     c.beginPath(); c.moveTo(-9,-46); c.lineTo(-17,-30+4*asw); c.stroke();
-    // right arm
     c.beginPath(); c.moveTo(9,-46); c.lineTo(15,-30-4*asw); c.stroke();
     c.fillStyle=skin;
     c.beginPath(); c.arc(-17,-29+4*asw,3.2,0,7); c.fill();
     c.beginPath(); c.arc(15,-29-4*asw,3.2,0,7); c.fill();
     // alpenstock
-    c.strokeStyle='#5A3A1F'; c.lineWidth=3.5;
+    c.strokeStyle=LINE_DEEP; c.lineWidth=3.5;
     c.beginPath(); c.moveTo(-17,-4); c.lineTo(-17,-56); c.stroke();
-    c.fillStyle='#5A3A1F'; c.beginPath(); c.arc(-17,-57,3.5,0,7); c.fill();
+    c.fillStyle=LINE_DEEP; c.beginPath(); c.arc(-17,-57,3.5,0,7); c.fill();
   }
   // head
   c.fillStyle=skin; c.beginPath(); c.arc(0,-60,9,0,7); c.fill();
-  const fx = st.amazed ? -3.5 : 2.5; // amazed: looks left at the scene
+  const fx = st.amazed ? -3.5 : 2.5;
   c.fillStyle='#2b1d10';
   c.beginPath(); c.arc(fx,-61,1.6,0,7); c.fill();
   if(st.amazed){ c.beginPath(); c.arc(fx-1,-56,2.6,0,7); c.fill(); }
   else { c.strokeStyle='#2b1d10'; c.lineWidth=1.6;
          c.beginPath(); c.arc(fx-1,-57,3,0.15*Math.PI,0.85*Math.PI); c.stroke(); }
-  // alpine hat + feather
-  c.fillStyle='#2E5B3A';
+  // campaign-maroon alpine hat with gold band + feather
+  c.fillStyle=MAROON;
   c.beginPath(); c.moveTo(-11,-64); c.quadraticCurveTo(0,-78,11,-64); c.closePath(); c.fill();
   c.fillRect(-12,-66,24,4);
-  c.strokeStyle='#B33A3A'; c.lineWidth=3;
+  c.fillStyle=GOLD; c.fillRect(-11,-66,22,2.2);
+  c.strokeStyle=GOLD; c.lineWidth=3;
   c.beginPath(); c.moveTo(6,-72); c.lineTo(13,-82); c.stroke();
   c.restore();
 }
-/* ---- Fireworks of hope ---- */
+/* ---- Fireworks of hope (campaign palette) ---- */
 function drawFireworks(c,fwT){
   if(fwT<0) return;
-  const cols=['#FFD37A','#FF9C6B','#FF6FA5','#FFF3D6','#8ED0FF'];
+  const cols=[GOLD,'#7A2E3C','#F7F3EA','#B56A5F','#E8B9C4'];
   const gap=0.55, life=1.7;
   const first=Math.max(0,Math.ceil((fwT-life)/gap)), last=Math.floor(fwT/gap);
   for(let i=first;i<=last;i++){
     const bt=i*gap, age=fwT-bt; if(age<=0||age>life) continue;
     const rnd=mulberry32(i*997+13);
-    const bx=lerp(320,1200,rnd()), by=lerp(60,300,rnd());
+    const bx=lerp(520,1200,rnd()), by=lerp(60,300,rnd());
     const col=cols[Math.floor(rnd()*cols.length)];
     const n=26, R=115*easeOut(age/life), al=1-age/life;
     c.fillStyle=col; c.globalAlpha=al;
     for(let j=0;j<n;j++){
       const a=j*2*Math.PI/n + rnd()*0.3;
       const px=bx+Math.cos(a)*R, py=by+Math.sin(a)*R + age*age*42;
-      c.beginPath(); c.arc(px,py,2.6,0,7); c.fill();
+      c.beginPath(); c.arc(px,py,2.8,0,7); c.fill();
     }
-    c.globalAlpha=al*0.9; c.fillStyle='#FFFFFF';
+    c.globalAlpha=al*0.9; c.fillStyle=MAROON_DEEP;
     star(c,bx,by,5*(1-age/life));
     c.globalAlpha=1;
   }
@@ -518,13 +486,13 @@ function drawFireworks(c,fwT){
 function renderFrame(c,s,t){
   const st=stateAt(s,t);
   const lp=2*Math.PI/s.loopDur;
-  c.clearRect(0,0,W,H);
-  drawSky(c);
-  drawMountain(c);
-  const xm=pledX(st.pled);
   const celeb = st.celebT>=0;
   const animate = celeb || !!st.animScene;
-  drawMaroonScene(c, celeb?G.x1:xm, animate, celeb, t, lp);
+  c.clearRect(0,0,W,H);
+  drawSky(c,t,lp,celeb);
+  drawMountain(c);
+  const xm=pledX(st.pled);
+  drawArtScene(c, celeb?G.x1:xm, animate, celeb, t, lp);
   drawMaroonLine(c, xm);
   drawSlopeScale(c);
   drawBottomScale(c);
@@ -550,12 +518,10 @@ function scheduleYodel(ac,dests,at,dur){
     o.connect(g); g.connect(master); o.start(t0); o.stop(t0+d+0.05);
   }
   const end=at+dur;
-  // oom-pah
   for(let t=at,i=0; t<end; t+=beat,i++){
-    tone(i%2?N.G3:N.C3, t, beat*0.5, 'triangle', 0.8);          // oom
-    [N.C4,N.E4,N.G4].forEach(f=>tone(f, t+beat*0.5, beat*0.32,'square',0.16)); // pah
+    tone(i%2?N.G3:N.C3, t, beat*0.5, 'triangle', 0.8);
+    [N.C4,N.E4,N.G4].forEach(f=>tone(f, t+beat*0.5, beat*0.32,'square',0.16));
   }
-  // yodel line: leaping octave pattern (original melody)
   const pat=[N.C5,N.E5,N.C5,N.A5, N.C5,N.E5,N.G5,N.C6, N.A5,N.E5,N.A4,N.E5, N.G5,N.E5,N.C5,N.G4];
   for(let t=at+beat*0.02,i=0; t<end-eighth; t+=eighth,i++){
     tone(pat[i%pat.length], t, eighth*0.9, 'triangle', 0.5);
@@ -580,7 +546,7 @@ function setBusy(b,msg){
 function setProg(p){ progBar.style.width=Math.round(p*100)+'%'; }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-function playPreview(s,{record=false,recStream=null}={}){
+function playPreview(s,{record=false}={}){
   return new Promise(res=>{
     const t0=performance.now();
     function loop(){
@@ -666,7 +632,7 @@ document.getElementById('btnVid').addEventListener('click', async ()=>{
     const ac=new (window.AudioContext||window.webkitAudioContext)();
     const dest=ac.createMediaStreamDestination();
     if(s.mode==='climbing') scheduleYodel(ac,[dest,ac.destination], ac.currentTime+s.hold, s.climbDur);
-    else { const g=ac.createGain(); g.gain.value=0.0001; const o=ac.createOscillator(); o.connect(g); g.connect(dest); o.start(); } // keep audio track alive
+    else { const g=ac.createGain(); g.gain.value=0.0001; const o=ac.createOscillator(); o.connect(g); g.connect(dest); o.start(); }
     dest.stream.getAudioTracks().forEach(tr=>stream.addTrack(tr));
     let mime='video/webm;codecs=vp9,opus';
     if(!MediaRecorder.isTypeSupported(mime)) mime='video/webm';
@@ -716,4 +682,3 @@ setMode('resting');
 </script>
 </body>
 </html>
-
