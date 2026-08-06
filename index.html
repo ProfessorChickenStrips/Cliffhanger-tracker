@@ -1,20 +1,22 @@
 <!DOCTYPE html>
 <!--
-  CLIFFHANGER FUNDRAISING GIF GENERATOR — "A Future with Hope" edition
-  ====================================================================
+  CLIFFHANGER FUNDRAISING GIF GENERATOR — "A Future with Hope" edition (v3)
+  =========================================================================
   Single-file app. Publish on GitHub Pages:
-    1. Commit this file as index.html at the repo root (uploading a file with the
-       same name replaces the old one).
+    1. Commit this file as index.html at the repo root (uploading a file with
+       the same name replaces the old one and triggers a fresh deployment).
     2. Repo Settings -> Pages -> Deploy from a branch -> main / (root) -> Save
   Exports:
-    - Animated GIF (silent) via gif.js  — for email, websites, social media
-    - WebM video WITH music via MediaRecorder — for PowerPoint (Insert > Video)
+    - Animated GIF (silent) via gifenc — for email, websites, social media
+    - Video WITH music via MediaRecorder — MP4 when the browser supports it
+      (best for PowerPoint: Insert > Video), otherwise WebM.
   Notes:
     - GIFs can never contain audio (format limitation).
-    - Safari: video export may be unavailable. GIF export works.
-  Design: campaign artwork (line-art sun with rays over concentric arc hills)
-  is redrawn as vector art in the scene — the sky carries the sun motif and the
-  arc hills are the maroon scene revealed as pledges grow.
+    - Safari: video export support varies. GIF export works everywhere modern.
+  Design: the campaign artwork (line-art sun with rays over concentric arc
+  hills) is redrawn as vector art — the sky carries the sun motif and the arc
+  hills are the maroon scene revealed as pledges grow. A campaign wordmark
+  plate brands every export.
 -->
 <html lang="en">
 <head>
@@ -23,17 +25,11 @@
 <title>Cliffhanger Campaign Tracker — A Future with Hope</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <style>
   :root{
-    --line:#82544C;        /* campaign line-art brown-maroon */
-    --line-deep:#5E332C;
-    --maroon:#7A2E3C;      /* campaign maroon */
-    --maroon-deep:#5E2531;
-    --cream:#F7F3EA;
-    --silver:#EFECE5;
-    --gold:#C9A24B;
-    --ink:#3A2723;
+    --line:#82544C; --line-deep:#5E332C;
+    --maroon:#7A2E3C; --maroon-deep:#5E2531;
+    --cream:#F7F3EA; --silver:#EFECE5; --gold:#C9A24B; --ink:#3A2723;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
   body{
@@ -60,9 +56,16 @@
     box-shadow:0 0 0 6px var(--cream), 0 0 0 8px var(--line), 0 14px 30px rgba(94,51,44,.18);
   }
   canvas#scene{ width:100%; height:auto; display:block; border-radius:6px; background:#fff;}
+  .canvasWrap{ position:relative;}
+  .trail-sign{
+    position:absolute; left:14px; bottom:14px; display:flex; align-items:center; gap:9px;
+    background:var(--cream); border:2.5px solid var(--line); border-radius:9px;
+    padding:6px 11px; transform:rotate(-1.2deg);
+    box-shadow:0 4px 10px rgba(94,51,44,.25);
+  }
+  .trail-sign .word{ font-size:.72rem;}
   .stage .caption{ font-size:.8rem; opacity:.7; margin-top:8px; text-align:center; font-weight:700;}
 
-  /* ---- Campaign-styled control card ---- */
   .sign{
     border-radius:12px; padding:16px 16px 18px; position:relative;
     background:var(--cream);
@@ -88,6 +91,7 @@
     background:#fff; border:2.5px solid var(--line);
     box-shadow: inset 0 2px 5px rgba(94,51,44,.25);
   }
+  .lever-track:focus-visible{ outline:3px solid var(--gold); outline-offset:2px;}
   .lever-knob{
     position:absolute; top:2px; left:2px; width:25px; height:25px; border-radius:50%;
     background:radial-gradient(circle at 32% 28%, #A9556A, var(--maroon) 55%, var(--maroon-deep));
@@ -122,6 +126,7 @@
   button:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--maroon-deep);}
   button.secondary{ color:var(--maroon-deep); background:#fff; border:2.5px solid var(--maroon); box-shadow:0 3px 0 rgba(94,37,49,.35);}
   button:disabled{ opacity:.5; cursor:not-allowed; transform:none;}
+  button:focus-visible{ outline:3px solid var(--gold); outline-offset:2px;}
   .progressWrap{ margin-top:10px; height:16px; border-radius:8px; background:#fff; overflow:hidden; border:2px solid var(--line); display:none;}
   .progressWrap.show{display:block;}
   .progressBar{ height:100%; width:0%; background:linear-gradient(90deg,var(--maroon),#a94b5e); transition:width .15s;}
@@ -133,39 +138,38 @@
 <body>
 <header>
   <h1>Cliffhanger Campaign Tracker</h1>
-  <p>A Future with Hope — set your numbers, preview the climb, download a GIF (silent) or a video with music.</p>
+  <p>A Future with Hope — set your numbers, watch the live preview, download a GIF (silent) or a video with music.</p>
 </header>
 
 <div class="wrap">
   <div class="stage">
-    <canvas id="scene" width="1280" height="720" aria-label="Animated mountain climber fundraising scene in the campaign's line-art style"></canvas>
+    <div class="canvasWrap">
+      <canvas id="scene" width="1280" height="720" role="img" aria-label="Animated mountain climber fundraising scene in the campaign's line-art style"></canvas>
+      <div class="trail-sign lever" role="group" aria-label="Animation mode">
+        <span class="word on" id="wRest">Resting</span>
+        <div class="lever-track" id="lever" role="switch" aria-checked="false" tabindex="0" aria-labelledby="wRest wClimb"><div class="lever-knob"></div></div>
+        <span class="word" id="wClimb">Climbing</span>
+      </div>
+    </div>
     <div class="caption">Slope = returns (0–120) &nbsp;•&nbsp; Bottom scale &amp; revealed artwork = pledged ($0–$600k)</div>
   </div>
 
   <aside class="sign" aria-label="Controls">
     <h2>Trail Controls</h2>
 
-    <div class="lever">
-      <span class="word on" id="wRest">Resting</span>
-      <div class="lever-track" id="lever" role="switch" aria-checked="false" tabindex="0" aria-label="Mode: resting or climbing">
-        <div class="lever-knob"></div>
-      </div>
-      <span class="word" id="wClimb">Climbing</span>
-    </div>
-
     <fieldset id="fsRest">
       <legend>Resting</legend>
-      <div class="row"><label for="restRet">Current returns</label><input id="restRet" type="number" min="0" step="1" value="45"></div>
-      <div class="row"><label for="restPled">Current pledged ($)</label><input id="restPled" type="number" min="0" step="1000" value="210000"></div>
+      <div class="row"><label for="restRet">Resting – Current returns</label><input id="restRet" type="number" min="0" step="1" value="45"></div>
+      <div class="row"><label for="restPled">Resting – Current pledged ($)</label><input id="restPled" type="number" min="0" step="1000" value="210000"></div>
       <div class="hint">Looping GIF: climber sways in place.</div>
     </fieldset>
 
     <fieldset id="fsClimb" class="dim">
       <legend>Climbing</legend>
-      <div class="row"><label for="lastRet">Last week return total</label><input id="lastRet" type="number" min="0" step="1" value="30"></div>
-      <div class="row"><label for="newRet">New return total</label><input id="newRet" type="number" min="0" step="1" value="45"></div>
-      <div class="row"><label for="lastPled">Last week pledged ($)</label><input id="lastPled" type="number" min="0" step="1000" value="150000"></div>
-      <div class="row"><label for="newPled">This week pledged ($)</label><input id="newPled" type="number" min="0" step="1000" value="210000"></div>
+      <div class="row"><label for="lastRet">Climbing – Last week return total</label><input id="lastRet" type="number" min="0" step="1" value="30"></div>
+      <div class="row"><label for="newRet">Climbing – New return total</label><input id="newRet" type="number" min="0" step="1" value="45"></div>
+      <div class="row"><label for="lastPled">Climbing – Last week pledged ($)</label><input id="lastPled" type="number" min="0" step="1000" value="150000"></div>
+      <div class="row"><label for="newPled">Climbing – This week pledged ($)</label><input id="newPled" type="number" min="0" step="1000" value="210000"></div>
       <div class="hint">3s hold → climb (≤8s) → arrival. 120 returns = fireworks; $600k = celebration.</div>
     </fieldset>
 
@@ -177,15 +181,15 @@
       </select>
     </div>
 
-    <button id="btnPreview" class="secondary">▶ Preview animation (with music)</button>
-    <button id="btnGif">Download GIF (silent)</button>
-    <button id="btnVid">Download video with music (.webm)</button>
+    <button type="button" id="btnPreview" class="secondary">▶ Replay with music</button>
+    <button type="button" id="btnGif">Download GIF (silent)</button>
+    <button type="button" id="btnVid">Download video with music (MP4/WebM)</button>
 
     <div class="progressWrap" id="progWrap"><div class="progressBar" id="progBar"></div></div>
-    <div class="status" id="status"></div>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
 
     <div class="note">
-      GIFs are always silent — a limitation of the GIF format itself. The video download carries the yodeling music: in PowerPoint use <b>Insert → Video</b>. GIFs go straight into emails, websites, and social posts as images.
+      GIFs are always silent — a limitation of the GIF format itself. The video download carries the yodeling music and saves as <b>MP4</b> when your browser supports it (best for PowerPoint: <b>Insert → Video</b>), otherwise WebM. GIFs go straight into emails, websites, and social posts as images.
     </div>
   </aside>
 </div>
@@ -210,7 +214,7 @@ const pledX=p=>lerp(G.x0,G.x1,clamp(p,0,MAX_PLED)/MAX_PLED);
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
 
 const canvas=document.getElementById('scene');
-const ctx=canvas.getContext('2d');
+const ctx=canvas.getContext('2d',{alpha:false});
 
 /* ============================================================
    SETTINGS SNAPSHOT & TIMELINE
@@ -230,8 +234,11 @@ function snapshot(){
     s.dur = s.loopDur;
   }else{
     s.hold=3;
-    const dist=Math.abs(s.newRet-s.lastRet);
-    s.climbDur = dist===0 ? 2.5 : clamp(8*dist/MAX_RET, 2.5, 8);
+    // Climb duration follows the LARGER of the two journeys so the pledge
+    // line's travel is always visible even when returns barely move.
+    const rd=Math.abs(s.newRet-s.lastRet)/MAX_RET;
+    const pd=Math.abs(s.newPled-s.lastPled)/MAX_PLED;
+    s.climbDur = clamp(2.5+5.5*Math.max(rd,pd), 2.5, 8);
     s.arrive=2;
     s.fireworks = s.newRet>=MAX_RET;
     s.fullPledCeleb = s.newPled>=MAX_PLED;
@@ -262,36 +269,58 @@ function stateAt(s,t){
 /* ============================================================
    DRAWING — campaign line-art style
 ============================================================ */
-/* Sky: silver-cream field with the campaign sun and radiating rays */
 function drawSky(c,t,lp,celeb){
   const g=c.createLinearGradient(0,0,0,H);
   g.addColorStop(0,'#F2EFE9'); g.addColorStop(.6,'#F6F4EF'); g.addColorStop(1,'#FBFAF7');
   c.fillStyle=g; c.fillRect(0,0,W,H);
-  const sx=330, sy=165, r=88, nRays=14;
+  const sx=520, sy=185, r=88, nRays=14;
   c.strokeStyle=LINE; c.lineWidth=5; c.lineCap='round';
   c.globalAlpha=.85;
   c.beginPath(); c.arc(sx,sy,r,0,7); c.stroke();
-  const rot = celeb ? (2*Math.PI/nRays)*(t/(2*Math.PI/lp)) : 0; // one ray-step per loop
+  // Two ray-steps per loop: alternating short/long rays only realign at the
+  // seam under an even step, so a one-step rotation would break the loop.
+  const rot = celeb ? (t*lp)*(2/nRays) : 0;
   for(let i=0;i<nRays;i++){
     const a=rot + i*2*Math.PI/nRays + Math.PI/nRays;
-    const len= (i%2? 150:230) + (celeb? 18*Math.sin(t*lp*2+i):0);
+    const len= (i%2? 140:210) + (celeb? 18*Math.sin(t*lp*2+i):0);
     c.globalAlpha = .55 + (celeb? .3*(0.5+0.5*Math.sin(t*lp*2+i)) : 0);
     c.beginPath();
     c.moveTo(sx+Math.cos(a)*(r+16), sy+Math.sin(a)*(r+16));
     c.lineTo(sx+Math.cos(a)*(r+16+len), sy+Math.sin(a)*(r+16+len));
     c.stroke();
   }
+  if(celeb){ // circling birds, loop-safe closed orbits
+    c.strokeStyle=LINE; c.lineWidth=3; c.globalAlpha=.9;
+    for(let i=0;i<3;i++){
+      const bx=790+i*150+40*Math.sin(t*lp+i*2.1);
+      const by=125+22*Math.sin(2*t*lp+i);
+      const f=Math.sin(4*t*lp+i)*4;
+      c.beginPath(); c.moveTo(bx-12,by+f); c.quadraticCurveTo(bx-4,by-7,bx,by);
+      c.quadraticCurveTo(bx+4,by-7,bx+12,by+f); c.stroke();
+    }
+  }
   c.globalAlpha=1;
+}
+/* Campaign wordmark plate — brands every exported GIF/video */
+function drawWordmark(c){
+  c.save();
+  c.fillStyle='rgba(255,255,255,.9)';
+  roundRect(c,64,26,346,62,12); c.fill();
+  c.strokeStyle=LINE; c.lineWidth=2.5; roundRect(c,64,26,346,62,12); c.stroke();
+  c.fillStyle=MAROON_DEEP; c.textAlign='left';
+  c.font="20px 'Alfa Slab One', serif";
+  c.fillText('A  F U T U R E  W I T H  H O P E', 84, 56);
+  c.font='800 12px Nunito, sans-serif'; c.fillStyle='rgba(94,51,44,.75)';
+  c.fillText('C A M P A I G N   P R O G R E S S', 85, 76);
+  c.restore();
 }
 function drawMountain(c){
   c.beginPath();
   c.moveTo(G.x0,G.yBottom); c.lineTo(G.x0,G.ySlopeBase);
   c.lineTo(G.x1,G.yPeak); c.lineTo(G.x1+34,G.yBottom); c.closePath();
   c.fillStyle='#FFFFFF'; c.fill();
-  // right cliff line
   c.strokeStyle=LINE; c.lineWidth=3;
   c.beginPath(); c.moveTo(G.x1,G.yPeak); c.lineTo(G.x1+34,G.yBottom); c.stroke();
-  // slope edge in campaign line color
   c.beginPath(); c.moveTo(G.x0,G.ySlopeBase); c.lineTo(G.x1,G.yPeak);
   c.strokeStyle=LINE_DEEP; c.lineWidth=4; c.stroke();
 }
@@ -317,8 +346,7 @@ function drawBottomScale(c){
     c.fillText(m===0?'$0':'$'+m+'k', x, G.yLabel+8);
   }
 }
-/* The campaign's concentric arc hills, revealed left of xm.
-   Hills occlude back-to-front exactly like the artwork. */
+/* The campaign's concentric arc hills, revealed left of xm. */
 const HILLS=[
   {cx:150,  r:200},
   {cx:640,  r:225},
@@ -333,15 +361,8 @@ function drawArtScene(c,xm,animate,celeb,t,lp){
   c.moveTo(G.x0,G.yBottom); c.lineTo(G.x0,G.ySlopeBase);
   c.lineTo(xm,slopeY(xm)); c.lineTo(xm,G.yBottom); c.closePath();
   c.clip();
-  // soft maroon wash grows with celebration
-  if(celeb){
-    const pulse=.10+.05*(0.5+0.5*Math.sin(t*lp));
-    c.fillStyle=`rgba(122,46,60,${pulse})`;
-    c.fillRect(G.x0,0,W,H);
-  }
   c.lineCap='round';
   HILLS.forEach((h,hi)=>{
-    // white fill occludes hills behind, as in the artwork
     c.beginPath(); c.arc(h.cx,G.yBottom,h.r,Math.PI,2*Math.PI); c.closePath();
     c.fillStyle = celeb ? 'rgba(255,252,248,.92)' : '#FFFFFF';
     c.fill();
@@ -355,8 +376,12 @@ function drawArtScene(c,xm,animate,celeb,t,lp){
     }
   });
   c.globalAlpha=1;
+  // Maroon wash over the revealed artwork: the pledged region now reads as a
+  // tinted fill even at email-GIF sizes, not just as line art.
+  const washA = celeb ? .16+.06*(0.5+0.5*Math.sin(t*lp)) : .13;
+  c.fillStyle=`rgba(122,46,60,${washA})`;
+  c.fillRect(G.x0-2,0,W,H);
   if(celeb){
-    // golden sparkle stars drifting over the hills
     const rnd=mulberry32(41);
     for(let i=0;i<22;i++){
       const px=G.x0+30+rnd()*1120, py=300+rnd()*300;
@@ -381,35 +406,38 @@ function drawMaroonLine(c,xm){
   c.strokeStyle=MAROON_DEEP; c.lineWidth=5;
   c.beginPath(); c.moveTo(xm,G.yBottom-1); c.lineTo(xm,yTop); c.stroke();
 }
-/* In-scene sign in the campaign style */
-function drawModeSign(c){
-  const x=slopeX(7), y=slopeY(slopeX(7));
-  c.save(); c.translate(x,y);
-  c.strokeStyle=LINE_DEEP; c.lineWidth=5;
-  c.beginPath(); c.moveTo(0,0); c.lineTo(0,-46); c.stroke();
-  c.fillStyle=CREAM; c.strokeStyle=LINE_DEEP; c.lineWidth=3;
-  roundRect(c,-44,-78,88,30,5); c.fill(); c.stroke();
-  c.fillStyle=MAROON_DEEP; c.font="17px 'Alfa Slab One', serif"; c.textAlign='center';
-  c.fillText(mode==='climbing'?'CLIMB!':'REST', 0,-56);
-  c.restore();
-}
 function roundRect(c,x,y,w,h,r){
   c.beginPath(); c.moveTo(x+r,y);
   c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
   c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
 }
-/* ---- Climber (campaign palette) ---- */
+/* ---- Climber (campaign palette, outlined limbs, hat-wave celebration) ---- */
+function limb(c,pts,color,w){
+  c.lineCap='round'; c.lineJoin='round';
+  c.strokeStyle='#3A2723'; c.lineWidth=w+3;
+  c.beginPath(); c.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++) c.lineTo(pts[i][0],pts[i][1]);
+  c.stroke();
+  c.strokeStyle=color; c.lineWidth=w; c.stroke();
+}
+function drawHat(c){ // origin at hat's brim center
+  c.fillStyle=MAROON;
+  c.beginPath(); c.moveTo(-11,-4); c.quadraticCurveTo(0,-18,11,-4); c.closePath(); c.fill();
+  c.fillRect(-12,-6,24,4);
+  c.fillStyle=GOLD; c.fillRect(-11,-6,22,2.2);
+  c.strokeStyle=GOLD; c.lineWidth=3; c.lineCap='round';
+  c.beginPath(); c.moveTo(6,-12); c.lineTo(13,-22); c.stroke();
+}
 function drawClimber(c,st,t,lp){
   const x=slopeX(st.ret), y=slopeY(x)+2;
   const tilt = st.sway ? Math.sin(2*Math.PI*t/2)*0.10 : 0;
   const bounce = st.amazed ? -6*Math.abs(Math.sin(t*3)) : 0;
-  c.save(); c.translate(x,y+bounce); c.rotate(tilt);
-  const skin='#F2C9A0', shirt='#FFFDF8', pants=LINE_DEEP, dark='#3A2723';
+  c.save(); c.translate(x,y+bounce); c.scale(1.32,1.32); c.rotate(tilt);
+  const skin='#F2C9A0', shirt='#FFFDF8', pants=LINE_DEEP;
   const gp=st.gaitPh, sw=st.gaitPh?Math.sin(gp):0;
-  // legs
-  c.strokeStyle=dark; c.lineWidth=6; c.lineCap='round';
-  c.beginPath(); c.moveTo(0,-24); c.lineTo(-7+8*sw, -2-4*Math.max(0,sw)); c.stroke();
-  c.beginPath(); c.moveTo(0,-24); c.lineTo( 7-8*sw, -2-4*Math.max(0,-sw)); c.stroke();
+  // legs (outlined)
+  limb(c,[[0,-24],[-7+8*sw, -2-4*Math.max(0,sw)]],pants,5.5);
+  limb(c,[[0,-24],[ 7-8*sw, -2-4*Math.max(0,-sw)]],pants,5.5);
   // shoes
   c.fillStyle='#2b1d10';
   c.beginPath(); c.ellipse(-8+8*sw,-1-4*Math.max(0,sw),7,4,0,0,7); c.fill();
@@ -419,21 +447,20 @@ function drawClimber(c,st,t,lp){
   c.fillStyle=shirt; roundRect(c,-10,-52,20,22,6); c.fill();
   c.strokeStyle=LINE; c.lineWidth=2; roundRect(c,-10,-52,20,22,6); c.stroke();
   // straps in campaign maroon
-  c.strokeStyle=MAROON; c.lineWidth=4;
+  c.strokeStyle=MAROON; c.lineWidth=4; c.lineCap='round';
   c.beginPath(); c.moveTo(-6,-32); c.lineTo(-4,-50); c.stroke();
   c.beginPath(); c.moveTo( 6,-32); c.lineTo( 4,-50); c.stroke();
-  // arms
-  c.strokeStyle='#E9DFC9'; c.lineWidth=5.5;
+  // arms (outlined)
   if(st.amazed){
-    c.beginPath(); c.moveTo(-9,-48); c.lineTo(-20,-64); c.stroke();
-    c.beginPath(); c.moveTo( 9,-48); c.lineTo( 20,-64); c.stroke();
+    limb(c,[[-9,-48],[-20,-64]],'#E9DFC9',5);
+    limb(c,[[ 9,-48],[ 20,-64]],'#E9DFC9',5);
     c.fillStyle=skin;
     c.beginPath(); c.arc(-21,-65,3.4,0,7); c.fill();
     c.beginPath(); c.arc( 21,-65,3.4,0,7); c.fill();
   } else {
     const asw=st.gaitPh?-sw:0;
-    c.beginPath(); c.moveTo(-9,-46); c.lineTo(-17,-30+4*asw); c.stroke();
-    c.beginPath(); c.moveTo(9,-46); c.lineTo(15,-30-4*asw); c.stroke();
+    limb(c,[[-9,-46],[-17,-30+4*asw]],'#E9DFC9',5);
+    limb(c,[[ 9,-46],[15,-30-4*asw]],'#E9DFC9',5);
     c.fillStyle=skin;
     c.beginPath(); c.arc(-17,-29+4*asw,3.2,0,7); c.fill();
     c.beginPath(); c.arc(15,-29-4*asw,3.2,0,7); c.fill();
@@ -444,33 +471,40 @@ function drawClimber(c,st,t,lp){
   }
   // head
   c.fillStyle=skin; c.beginPath(); c.arc(0,-60,9,0,7); c.fill();
+  c.strokeStyle='#3A2723'; c.lineWidth=1.8;
+  c.beginPath(); c.arc(0,-60,9,0,7); c.stroke();
   const fx = st.amazed ? -3.5 : 2.5;
   c.fillStyle='#2b1d10';
   c.beginPath(); c.arc(fx,-61,1.6,0,7); c.fill();
   if(st.amazed){ c.beginPath(); c.arc(fx-1,-56,2.6,0,7); c.fill(); }
   else { c.strokeStyle='#2b1d10'; c.lineWidth=1.6;
          c.beginPath(); c.arc(fx-1,-57,3,0.15*Math.PI,0.85*Math.PI); c.stroke(); }
-  // campaign-maroon alpine hat with gold band + feather
-  c.fillStyle=MAROON;
-  c.beginPath(); c.moveTo(-11,-64); c.quadraticCurveTo(0,-78,11,-64); c.closePath(); c.fill();
-  c.fillRect(-12,-66,24,4);
-  c.fillStyle=GOLD; c.fillRect(-11,-66,22,2.2);
-  c.strokeStyle=GOLD; c.lineWidth=3;
-  c.beginPath(); c.moveTo(6,-72); c.lineTo(13,-82); c.stroke();
+  if(st.amazed){
+    // hat waved overhead in the raised right hand
+    c.save();
+    c.translate(24,-76 - 5*Math.abs(Math.sin(t*3)));
+    c.rotate(-0.25 + 0.3*Math.sin(t*3));
+    drawHat(c);
+    c.restore();
+  } else {
+    c.save(); c.translate(0,-62); drawHat(c); c.restore();
+  }
   c.restore();
 }
 /* ---- Fireworks of hope (campaign palette) ---- */
 function drawFireworks(c,fwT){
   if(fwT<0) return;
-  const cols=[GOLD,'#7A2E3C','#F7F3EA','#B56A5F','#E8B9C4'];
-  const gap=0.55, life=1.7;
+  const cols=[GOLD,'#7A2E3C','#B5484F','#E8B9C4','#8A5A50'];
+  const gap=0.45, life=1.7;
   const first=Math.max(0,Math.ceil((fwT-life)/gap)), last=Math.floor(fwT/gap);
   for(let i=first;i<=last;i++){
     const bt=i*gap, age=fwT-bt; if(age<=0||age>life) continue;
     const rnd=mulberry32(i*997+13);
-    const bx=lerp(520,1200,rnd()), by=lerp(60,300,rnd());
+    const bx=lerp(700,1200,rnd()), by=lerp(60,300,rnd());
     const col=cols[Math.floor(rnd()*cols.length)];
-    const n=26, R=115*easeOut(age/life), al=1-age/life;
+    const n=26, R=120*easeOut(age/life), al=1-age/life;
+    c.globalAlpha=al*.18; c.strokeStyle=col; c.lineWidth=12;
+    c.beginPath(); c.arc(bx,by,R*1.02,0,7); c.stroke();
     c.fillStyle=col; c.globalAlpha=al;
     for(let j=0;j<n;j++){
       const a=j*2*Math.PI/n + rnd()*0.3;
@@ -488,7 +522,6 @@ function renderFrame(c,s,t){
   const lp=2*Math.PI/s.loopDur;
   const celeb = st.celebT>=0;
   const animate = celeb || !!st.animScene;
-  c.clearRect(0,0,W,H);
   drawSky(c,t,lp,celeb);
   drawMountain(c);
   const xm=pledX(st.pled);
@@ -496,7 +529,7 @@ function renderFrame(c,s,t){
   drawMaroonLine(c, xm);
   drawSlopeScale(c);
   drawBottomScale(c);
-  drawModeSign(c);
+  drawWordmark(c);
   drawClimber(c,st,t,lp);
   drawFireworks(c,st.fwT);
 }
@@ -530,13 +563,25 @@ function scheduleYodel(ac,dests,at,dur){
 }
 
 /* ============================================================
-   PREVIEW / EXPORT
+   CONTINUOUS PREVIEW
 ============================================================ */
 const statusEl=document.getElementById('status');
 const progWrap=document.getElementById('progWrap');
 const progBar=document.getElementById('progBar');
 const btns=['btnPreview','btnGif','btnVid'].map(id=>document.getElementById(id));
 let busy=false;
+let liveCfg=null, liveStart=performance.now();
+function refreshLive(){ liveCfg=snapshot(); liveStart=performance.now(); }
+(function liveLoop(){
+  requestAnimationFrame(function tick(now){
+    if(!busy && liveCfg){
+      const t=((now-liveStart)/1000)%liveCfg.dur;
+      renderFrame(ctx,liveCfg,t);
+    }
+    requestAnimationFrame(tick);
+  });
+})();
+
 function setBusy(b,msg){
   busy=b; btns.forEach(x=>x.disabled=b);
   statusEl.textContent=msg||'';
@@ -546,78 +591,96 @@ function setBusy(b,msg){
 function setProg(p){ progBar.style.width=Math.round(p*100)+'%'; }
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
-function playPreview(s,{record=false}={}){
-  return new Promise(res=>{
-    const t0=performance.now();
-    function loop(){
-      const t=(performance.now()-t0)/1000;
-      if(t>=s.dur+(record?0.3:0)){ renderFrame(ctx,s,s.dur-0.001); res(); return; }
-      renderFrame(ctx,s,t);
-      requestAnimationFrame(loop);
-    }
-    requestAnimationFrame(loop);
-  });
-}
+/* Replay with music: restart the live loop and play one audio pass */
+let previewAC=null;
 document.getElementById('btnPreview').addEventListener('click', async ()=>{
   if(busy) return;
-  const s=snapshot();
-  setBusy(true,'Previewing…'); progWrap.classList.remove('show');
-  let ac=null;
-  if(s.mode==='climbing'){
-    ac=new (window.AudioContext||window.webkitAudioContext)();
-    scheduleYodel(ac,[ac.destination], ac.currentTime+s.hold, s.climbDur);
+  refreshLive();
+  if(previewAC){ try{ previewAC.close(); }catch(e){} previewAC=null; }
+  if(liveCfg.mode==='climbing'){
+    previewAC=new (window.AudioContext||window.webkitAudioContext)();
+    scheduleYodel(previewAC,[previewAC.destination], previewAC.currentTime+liveCfg.hold, liveCfg.climbDur);
+    const acRef=previewAC;
+    setTimeout(()=>{ if(previewAC===acRef){ try{acRef.close();}catch(e){} previewAC=null; } }, (liveCfg.dur+0.5)*1000);
+    statusEl.textContent='Previewing with music…';
+    setTimeout(()=>{ if(!busy) statusEl.textContent=''; }, (liveCfg.dur+0.5)*1000);
+  } else {
+    statusEl.textContent='Resting mode loops silently.';
+    setTimeout(()=>{ if(!busy) statusEl.textContent=''; }, 2500);
   }
-  await playPreview(s);
-  if(ac) ac.close();
-  setBusy(false,'Preview done.');
-  renderStill();
 });
 
-/* ---- GIF export ---- */
-let workerUrl=null;
-async function getWorkerUrl(){
-  if(workerUrl) return workerUrl;
-  const r=await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-  workerUrl=URL.createObjectURL(await r.blob());
-  return workerUrl;
+/* ============================================================
+   GIF EXPORT — gifenc, palette sized per preset, accurate delays
+============================================================ */
+const PRESETS={
+  email:{w:800, fps:12, colors:64,  format:'rgb444'},
+  hq:   {w:1280,fps:20, colors:128, format:'rgb565'}
+};
+let gifencMod=null;
+async function loadGifenc(){
+  if(gifencMod) return gifencMod;
+  gifencMod=await import('https://unpkg.com/gifenc@1.0.3/dist/gifenc.esm.js');
+  return gifencMod;
 }
-const PRESETS={ email:{w:800,fps:12,q:12}, hq:{w:1280,fps:20,q:8} };
 document.getElementById('btnGif').addEventListener('click', async ()=>{
   if(busy) return;
   const s=snapshot();
   const p=PRESETS[document.getElementById('preset').value];
-  setBusy(true,'Capturing frames…');
+  setBusy(true,'Loading GIF encoder…');
   try{
-    const wurl=await getWorkerUrl();
+    const {GIFEncoder,quantize,applyPalette}=await loadGifenc();
     const scale=p.w/W;
     const oc=document.createElement('canvas');
     oc.width=p.w; oc.height=Math.round(H*scale);
-    const octx=oc.getContext('2d');
-    const gif=new GIF({workers:2, quality:p.q, width:oc.width, height:oc.height, workerScript:wurl, repeat:0});
+    const octx=oc.getContext('2d',{alpha:false,willReadFrequently:true});
+    const gif=GIFEncoder();
     const frames=Math.max(2,Math.round(s.dur*p.fps));
+    // GIF delays are stored in centiseconds; diffuse the rounding error so
+    // playback speed stays exact (e.g. 12 fps => 80/90 ms alternation).
+    const target=1000/p.fps; let carry=0;
     for(let i=0;i<frames;i++){
       const t=i/p.fps;
       octx.setTransform(scale,0,0,scale,0,0);
       renderFrame(octx,s,t);
-      gif.addFrame(oc,{copy:true,delay:Math.round(1000/p.fps)});
-      if(i%5===0){ setProg(0.5*i/frames); await sleep(0); }
+      const want=target+carry;
+      const delay=Math.max(20,Math.round(want/10)*10);
+      carry=want-delay;
+      const rgba=octx.getImageData(0,0,oc.width,oc.height).data;
+      const palette=quantize(rgba,p.colors,{format:p.format});
+      const indexed=applyPalette(rgba,palette,p.format);
+      gif.writeFrame(indexed,oc.width,oc.height,{palette,delay,repeat:0});
+      statusEl.textContent=`Encoding frame ${i+1} of ${frames}…`;
+      setProg((i+1)/frames);
+      if(i%2===0) await new Promise(r=>requestAnimationFrame(r));
     }
-    setBusy(true,'Encoding GIF… (this can take a moment)');
-    gif.on('progress',pr=>setProg(0.5+0.5*pr));
-    const blob=await new Promise(res=>{ gif.on('finished',res); gif.render(); });
+    gif.finish();
+    const blob=new Blob([gif.bytesView()],{type:'image/gif'});
     const name=s.mode==='resting'
-      ? `cliffhanger-resting-${s.restRet}ret-${Math.round(s.restPled/1000)}k.gif`
-      : `cliffhanger-climb-${s.lastRet}-to-${s.newRet}ret-${Math.round(s.newPled/1000)}k.gif`;
+      ? `future-with-hope-resting-${s.restRet}ret-${Math.round(s.restPled/1000)}k.gif`
+      : `future-with-hope-climb-${s.lastRet}-to-${s.newRet}ret-${Math.round(s.newPled/1000)}k.gif`;
     download(blob,name);
     setBusy(false,`GIF ready (${(blob.size/1048576).toFixed(1)} MB). Silent by design — use the video for music.`);
   }catch(err){
     console.error(err);
-    setBusy(false,'GIF export failed: '+err.message+' (If previewing inside Claude, deploy to GitHub Pages and export there.)');
+    setBusy(false,'GIF export failed: '+err.message+' (Check your connection; the encoder loads from unpkg.com. If previewing inside Claude, deploy to GitHub Pages and export there.)');
   }
-  renderStill();
+  refreshLive();
 });
 
-/* ---- Video export (WebM with music) ---- */
+/* ============================================================
+   VIDEO EXPORT — MP4 first, WebM fallback, music mixed in
+============================================================ */
+function recordingFormats(){
+  const list=[
+    {mime:'video/mp4;codecs=avc1.42E01E,mp4a.40.2', ext:'mp4'},
+    {mime:'video/mp4', ext:'mp4'},
+    {mime:'video/webm;codecs=vp9,opus', ext:'webm'},
+    {mime:'video/webm;codecs=vp8,opus', ext:'webm'},
+    {mime:'video/webm', ext:'webm'}
+  ];
+  return list.filter(x=>MediaRecorder.isTypeSupported(x.mime)).concat([{mime:'',ext:'webm'}]);
+}
 document.getElementById('btnVid').addEventListener('click', async ()=>{
   if(busy) return;
   if(typeof MediaRecorder==='undefined' || !canvas.captureStream){
@@ -627,36 +690,55 @@ document.getElementById('btnVid').addEventListener('click', async ()=>{
   const s=snapshot();
   setBusy(true,'Recording video… watch the preview.');
   progWrap.classList.remove('show');
+  let ac=null, combined=null;
   try{
     const stream=canvas.captureStream(30);
-    const ac=new (window.AudioContext||window.webkitAudioContext)();
+    ac=new (window.AudioContext||window.webkitAudioContext)();
+    await ac.resume();
     const dest=ac.createMediaStreamDestination();
+    combined=new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
     if(s.mode==='climbing') scheduleYodel(ac,[dest,ac.destination], ac.currentTime+s.hold, s.climbDur);
-    else { const g=ac.createGain(); g.gain.value=0.0001; const o=ac.createOscillator(); o.connect(g); g.connect(dest); o.start(); }
-    dest.stream.getAudioTracks().forEach(tr=>stream.addTrack(tr));
-    let mime='video/webm;codecs=vp9,opus';
-    if(!MediaRecorder.isTypeSupported(mime)) mime='video/webm';
-    const rec=new MediaRecorder(stream,{mimeType:mime, videoBitsPerSecond:6_000_000});
-    const chunks=[]; rec.ondataavailable=e=>{ if(e.data.size) chunks.push(e.data); };
+    let rec=null, fmt=null;
+    for(const cand of recordingFormats()){
+      try{
+        const opts=cand.mime?{mimeType:cand.mime, videoBitsPerSecond:6_000_000, audioBitsPerSecond:128000}:undefined;
+        rec=new MediaRecorder(combined,opts); fmt=cand; break;
+      }catch(e){}
+    }
+    if(!rec) throw new Error('No compatible video recorder is available in this browser.');
+    const chunks=[]; rec.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
     const done=new Promise(res=>rec.onstop=res);
     rec.start(200);
-    await playPreview(s,{record:true});
-    rec.stop(); await done; ac.close();
-    const blob=new Blob(chunks,{type:'video/webm'});
-    const name=s.mode==='resting' ? 'cliffhanger-resting.webm' : 'cliffhanger-climb.webm';
+    // drive the main canvas for the duration of one full pass
+    await new Promise(res=>{
+      const t0=performance.now();
+      (function loop(){
+        const t=(performance.now()-t0)/1000;
+        if(t>=s.dur+0.3){ renderFrame(ctx,s,s.dur-0.001); res(); return; }
+        renderFrame(ctx,s,t);
+        requestAnimationFrame(loop);
+      })();
+    });
+    rec.stop(); await done;
+    combined.getTracks().forEach(tr=>tr.stop());
+    await ac.close(); ac=null;
+    const blob=new Blob(chunks,{type:rec.mimeType||fmt.mime||'video/webm'});
+    if(!blob.size) throw new Error('The browser produced an empty recording.');
+    const name=(s.mode==='resting'?'future-with-hope-resting.':'future-with-hope-climb.')+fmt.ext;
     download(blob,name);
-    setBusy(false,`Video ready (${(blob.size/1048576).toFixed(1)} MB). In PowerPoint: Insert → Video.`);
+    setBusy(false,`${fmt.ext.toUpperCase()} video ready (${(blob.size/1048576).toFixed(1)} MB). In PowerPoint: Insert → Video.`);
   }catch(err){
     console.error(err);
+    if(ac){ try{ await ac.close(); }catch(e){} }
     setBusy(false,'Video export failed: '+err.message);
   }
-  renderStill();
+  refreshLive();
 });
 function download(blob,name){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob); a.download=name;
   document.body.appendChild(a); a.click();
-  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},4000);
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},30000);
 }
 
 /* ============================================================
@@ -671,13 +753,12 @@ function setMode(m){
   document.getElementById('wClimb').classList.toggle('on',m==='climbing');
   document.getElementById('fsRest').classList.toggle('dim',m!=='resting');
   document.getElementById('fsClimb').classList.toggle('dim',m!=='climbing');
-  renderStill();
+  refreshLive();
 }
 lever.addEventListener('click',()=>setMode(mode==='resting'?'climbing':'resting'));
 lever.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter'){e.preventDefault(); lever.click();}});
-document.querySelectorAll('input[type=number]').forEach(el=>el.addEventListener('input',renderStill));
-function renderStill(){ if(!busy) renderFrame(ctx,snapshot(),0); }
-document.fonts?.ready.then(renderStill);
+document.querySelectorAll('input[type=number]').forEach(el=>el.addEventListener('input',refreshLive));
+document.fonts?.ready.then(refreshLive);
 setMode('resting');
 </script>
 </body>
