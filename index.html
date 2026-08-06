@@ -728,6 +728,14 @@ document.getElementById('btnVid').addEventListener('click', async ()=>{
     await ac.resume();
     const dest=ac.createMediaStreamDestination();
     combined=new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+    // Keepalive tone spanning the FULL recording: keeps the audio track live
+    // through the silent celebration tail so muxers (esp. Safari MP4) don't
+    // finalize early and truncate the ending.
+    {
+      const ka=ac.createOscillator(), kg=ac.createGain();
+      kg.gain.value=0.0001; ka.connect(kg); kg.connect(dest);
+      ka.start(); ka.stop(ac.currentTime+s.dur+1.5);
+    }
     if(s.mode==='climbing') scheduleYodel(ac,[dest,ac.destination], ac.currentTime+s.hold, s.climbDur);
     let rec=null, fmt=null;
     for(const cand of recordingFormats()){
@@ -745,11 +753,13 @@ document.getElementById('btnVid').addEventListener('click', async ()=>{
       const t0=performance.now();
       (function loop(){
         const t=(performance.now()-t0)/1000;
-        if(t>=s.dur+0.3){ renderFrame(ctx,s,s.dur-0.001); res(); return; }
+        // record one full extra second of live celebration as a safety tail
+        if(t>=s.dur+1.0){ res(); return; }
         renderFrame(ctx,s,t);
         requestAnimationFrame(loop);
       })();
     });
+    try{ rec.requestData(); }catch(e){}
     rec.stop(); await done;
     combined.getTracks().forEach(tr=>tr.stop());
     await ac.close(); ac=null;
