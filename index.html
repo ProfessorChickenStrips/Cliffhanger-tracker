@@ -163,7 +163,7 @@
       <legend>Resting</legend>
       <div class="row"><label for="restRet">Resting – Current returns</label><input id="restRet" type="number" min="0" step="1" value="45"></div>
       <div class="row"><label for="restPled">Resting – Current pledged ($)</label><input id="restPled" type="number" min="0" step="1000" value="210000"></div>
-      <div class="hint">Looping GIF: climber sways in place.</div>
+      <div class="hint">Looping GIF: climber sways in place. These stay in sync with Climbing's "New" and "This week" values.</div>
     </fieldset>
 
     <fieldset id="fsClimb" class="dim">
@@ -886,7 +886,14 @@ function setMode(m){
 }
 lever.addEventListener('click',()=>setMode(mode==='resting'?'climbing':'resting'));
 lever.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter'){e.preventDefault(); lever.click();}});
-document.querySelectorAll('input[type=number]').forEach(el=>el.addEventListener('input',refreshLive));
+/* Resting "current" fields mirror Climbing "new/this week" fields — the
+   resting scene should always show where the last climb ended. */
+const LINKED={restRet:'newRet', newRet:'restRet', restPled:'newPled', newPled:'restPled'};
+document.querySelectorAll('input[type=number]').forEach(el=>el.addEventListener('input',()=>{
+  const twin=LINKED[el.id];
+  if(twin) document.getElementById(twin).value=el.value;
+  refreshLive();
+}));
 document.fonts?.ready.then(refreshLive);
 setMode('resting');
 </script>
