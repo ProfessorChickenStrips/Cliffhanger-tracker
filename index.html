@@ -748,6 +748,19 @@ document.getElementById('btnGif').addEventListener('click', async ()=>{
     const octx=oc.getContext('2d',{alpha:false,willReadFrequently:true});
     const gif=GIFEncoder();
     const frames=Math.max(2,Math.round(s.dur*p.fps));
+    // One global palette sampled across the timeline: prevents per-frame
+    // palette flicker and roughly halves encoding time.
+    setBusy(true,'Building color palette…');
+    const samples=[];
+    const sampleIdx=[0, Math.floor(frames*0.3), Math.floor(frames*0.55), Math.floor(frames*0.8), frames-1];
+    for(const si of sampleIdx){
+      octx.setTransform(scale,0,0,scale,0,0);
+      renderFrame(octx,s,si/p.fps);
+      const d=octx.getImageData(0,0,oc.width,oc.height).data;
+      for(let j=0;j<d.length;j+=16) samples.push(d[j],d[j+1],d[j+2],d[j+3]);
+      await sleep(0);
+    }
+    const palette=quantize(new Uint8ClampedArray(samples),p.colors,{format:p.format});
     // GIF delays are stored in centiseconds; diffuse the rounding error so
     // playback speed stays exact (e.g. 12 fps => 80/90 ms alternation).
     const target=1000/p.fps; let carry=0;
@@ -759,7 +772,6 @@ document.getElementById('btnGif').addEventListener('click', async ()=>{
       const delay=Math.max(20,Math.round(want/10)*10);
       carry=want-delay;
       const rgba=octx.getImageData(0,0,oc.width,oc.height).data;
-      const palette=quantize(rgba,p.colors,{format:p.format});
       const indexed=applyPalette(rgba,palette,p.format);
       gif.writeFrame(indexed,oc.width,oc.height,{palette,delay,repeat:0});
       statusEl.textContent=`Encoding frame ${i+1} of ${frames}…`;
@@ -889,11 +901,15 @@ lever.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter'){e.prevent
 /* Resting "current" fields mirror Climbing "new/this week" fields — the
    resting scene should always show where the last climb ended. */
 const LINKED={restRet:'newRet', newRet:'restRet', restPled:'newPled', newPled:'restPled'};
-document.querySelectorAll('input[type=number]').forEach(el=>el.addEventListener('input',()=>{
-  const twin=LINKED[el.id];
-  if(twin) document.getElementById(twin).value=el.value;
-  refreshLive();
-}));
+document.querySelectorAll('input[type=number]').forEach(el=>{
+  const sync=()=>{
+    const twin=LINKED[el.id];
+    if(twin) document.getElementById(twin).value=el.value;
+    refreshLive();
+  };
+  el.addEventListener('input',sync);
+  el.addEventListener('change',sync);
+});
 document.fonts?.ready.then(refreshLive);
 setMode('resting');
 </script>
