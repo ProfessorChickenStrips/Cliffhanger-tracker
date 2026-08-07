@@ -984,6 +984,8 @@ lever.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter'){e.prevent
 const LINKED={restRet:'newRet', newRet:'restRet', restPled:'newPled', newPled:'restPled'};
 document.querySelectorAll('input[type=number]').forEach(el=>{
   const sync=()=>{
+    // normalize leading zeros ("045" -> "45"); leaves "0" and "0.5" alone
+    if(/^0\d/.test(el.value)) el.value=el.value.replace(/^0+(?=\d)/,'');
     const twin=LINKED[el.id];
     if(twin) document.getElementById(twin).value=el.value;
     refreshLive();
@@ -991,6 +993,8 @@ document.querySelectorAll('input[type=number]').forEach(el=>{
   };
   el.addEventListener('input',sync);
   el.addEventListener('change',sync);
+  // selecting the content on focus means typing replaces the existing value
+  el.addEventListener('focus',()=>{ try{ el.select(); }catch(e){} });
 });
 setMode('resting');
 approve(true); // initial configuration is pre-approved so the page starts export-ready
