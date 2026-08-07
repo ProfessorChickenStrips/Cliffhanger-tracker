@@ -172,7 +172,7 @@
       <div class="row"><label for="newRet">Climbing – New return total</label><input id="newRet" type="number" min="0" step="1" value="45"></div>
       <div class="row"><label for="lastPled">Climbing – Last week pledged ($)</label><input id="lastPled" type="number" min="0" step="1000" value="150000"></div>
       <div class="row"><label for="newPled">Climbing – This week pledged ($)</label><input id="newPled" type="number" min="0" step="1000" value="210000"></div>
-      <div class="hint">3s hold → climb (≤8s) → arrival. 120 returns = fireworks; $600k = celebration.</div>
+      <div class="hint">3s hold → climb (≤8s) → arrival. 120 returns = fireworks; $600k = celebration. "New" and "This week" values stay synced with the Resting fields.</div>
     </fieldset>
 
     <div class="presetRow">
@@ -202,7 +202,7 @@
    GEOMETRY & CONSTANTS  (design space is 1280x720)
 ============================================================ */
 const W=1280,H=720;
-const G={x0:70, x1:1225, ySlopeBase:640, yPeak:95, yBottom:660, yLabel:690};
+const G={x0:70, x1:1225, ySlopeBase:640, yPeak:122, yBottom:660, yLabel:690}; // yPeak leaves headroom for the celebrating climber's raised hat
 const MAX_RET=120, MAX_PLED=600000;
 const LINE='#82544C', LINE_DEEP='#5E332C', MAROON='#7A2E3C', MAROON_DEEP='#5E2531',
       TEAL='#2E6276', TEAL_DEEP='#1F4C5C', LEAF='#7FA84F', LEAF_DARK='#5E8A3C', LEAF_LIGHT='#A8C582',
@@ -283,10 +283,14 @@ function drawSky(c,t,lp,celeb){
   // Two ray-steps per loop: alternating short/long rays only realign at the
   // seam under an even step, so a one-step rotation would break the loop.
   const rot = celeb ? (t*lp)*(2/nRays) : 0;
+  // Uniform wobble/shimmer (no per-ray phase): with the 2-step rotation this
+  // keeps the celebration loop pixel-exact at the seam.
+  const wob = celeb? 18*Math.sin(t*lp*2) : 0;
+  const shim = celeb? .3*(0.5+0.5*Math.sin(t*lp*2)) : 0;
   for(let i=0;i<nRays;i++){
     const a=rot + i*2*Math.PI/nRays + Math.PI/nRays;
-    const len= (i%2? 140:210) + (celeb? 18*Math.sin(t*lp*2+i):0);
-    c.globalAlpha = .55 + (celeb? .3*(0.5+0.5*Math.sin(t*lp*2+i)) : 0);
+    const len= (i%2? 140:210) + wob;
+    c.globalAlpha = .55 + shim;
     c.beginPath();
     c.moveTo(sx+Math.cos(a)*(r+16), sy+Math.sin(a)*(r+16));
     c.lineTo(sx+Math.cos(a)*(r+16+len), sy+Math.sin(a)*(r+16+len));
@@ -437,7 +441,7 @@ function star(c,x,y,r){
     c[i?'lineTo':'moveTo'](x+Math.cos(a)*rr, y+Math.sin(a)*rr); }
   c.closePath(); c.fill();
 }
-function drawMaroonLine(c,xm){
+function drawPledgeLine(c,xm){
   if(xm<=G.x0+0.5) return;
   const yTop=slopeY(xm);
   c.strokeStyle='rgba(255,255,255,.85)'; c.lineWidth=9; c.lineCap='round';
@@ -472,7 +476,7 @@ function drawHat(c){ // origin at hat's brim center
 function drawClimber(c,st,t,lp){
   const x=slopeX(st.ret), y=slopeY(x)+2;
   const tilt = st.sway ? Math.sin(2*Math.PI*t/2)*0.10 : 0;
-  const bounce = st.amazed ? -6*Math.abs(Math.sin(t*3)) : 0;
+  const bounce = st.amazed ? -6*Math.abs(Math.sin(t*lp*2)) : 0; // lp-locked so resting-celebration GIFs loop seamlessly
   c.save(); c.translate(x,y+bounce); c.scale(1.32,1.32); c.rotate(tilt);
   const skin='#F2C9A0', shirt='#FFFDF8', pants=LINE_DEEP;
   const gp=st.gaitPh, sw=st.gaitPh?Math.sin(gp):0;
@@ -523,8 +527,8 @@ function drawClimber(c,st,t,lp){
   if(st.amazed){
     // hat waved overhead in the raised right hand
     c.save();
-    c.translate(24,-76 - 5*Math.abs(Math.sin(t*3)));
-    c.rotate(-0.25 + 0.3*Math.sin(t*3));
+    c.translate(24,-76 - 5*Math.abs(Math.sin(t*lp*2)));
+    c.rotate(-0.25 + 0.3*Math.sin(t*lp*2));
     drawHat(c);
     c.restore();
   } else {
@@ -543,7 +547,9 @@ function drawFireworks(c,fwT){
     const rnd=mulberry32(i*997+13);
     const bx=lerp(700,1200,rnd()), by=lerp(60,300,rnd());
     const col=cols[Math.floor(rnd()*cols.length)];
-    const n=26, R=120*easeOut(age/life), al=1-age/life;
+    // deterministic per-volley variation: particle count and radius differ
+    const n=20+Math.floor(rnd()*12), Rmax=95+rnd()*45;
+    const R=Rmax*easeOut(age/life), al=1-age/life;
     c.globalAlpha=al*.18; c.strokeStyle=col; c.lineWidth=12;
     c.beginPath(); c.arc(bx,by,R*1.02,0,7); c.stroke();
     c.fillStyle=col; c.globalAlpha=al;
@@ -567,7 +573,7 @@ function renderFrame(c,s,t){
   drawMountain(c);
   const xm=pledX(st.pled);
   drawArtScene(c, celeb?G.x1:xm, animate, celeb, t, lp);
-  drawMaroonLine(c, xm);
+  drawPledgeLine(c, xm);
   drawSlopeScale(c);
   drawBottomScale(c);
   drawLogoPlate(c);
@@ -633,12 +639,12 @@ function scheduleCelebration(ac,dests,at,dur,withFireworks){
   // sparkling bells, deterministic spacing, through the whole celebration
   const rnd=mulberry32(7);
   const bells=[N.C6,N.E6,N.G6,N.G5,N.E5];
-  for(let t=at+0.8; t<at+dur-0.3; t+=0.28+rnd()*0.5){
+  for(let t=at+0.8; t<at+dur-1.0; t+=0.28+rnd()*0.5){
     tone(bells[Math.floor(rnd()*bells.length)], t, 0.9, 'sine', 0.16+rnd()*0.12);
   }
   // firework booms: sine pitch-drop thud
   if(withFireworks){
-    for(let t=at+0.6; t<at+dur-0.6; t+=1.15){
+    for(let t=at+0.6; t<at+dur-0.8; t+=1.15){
       const o=ac.createOscillator(),g=ac.createGain();
       o.type='sine'; o.frequency.setValueAtTime(105,t);
       o.frequency.exponentialRampToValueAtTime(42,t+0.55);
@@ -833,9 +839,9 @@ document.getElementById('btnVid').addEventListener('click', async ()=>{
     if(s.mode==='climbing'){
       scheduleYodel(ac,[dest,ac.destination], ac.currentTime+s.hold, s.climbDur);
       if(s.fireworks||s.fullPledCeleb)
-        scheduleCelebration(ac,[dest,ac.destination], ac.currentTime+s.hold+s.climbDur, s.arrive+s.extra+1.0, s.fireworks);
+        scheduleCelebration(ac,[dest,ac.destination], ac.currentTime+s.hold+s.climbDur, s.arrive+s.extra+0.7, s.fireworks);
     } else if(s.fullPledCeleb){
-      scheduleCelebration(ac,[dest,ac.destination], ac.currentTime+0.1, s.dur+0.9, false);
+      scheduleCelebration(ac,[dest,ac.destination], ac.currentTime+0.1, s.dur+0.7, false);
     }
     let rec=null, fmt=null;
     for(const cand of recordingFormats()){
