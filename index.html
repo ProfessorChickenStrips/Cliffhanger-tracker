@@ -245,7 +245,7 @@ function snapshot(){
     s.arrive=2;
     s.fireworks = s.newRet>=MAX_RET;
     s.fullPledCeleb = s.newPled>=MAX_PLED;
-    s.extra = (s.fireworks||s.fullPledCeleb)?4:0;
+    s.extra = (s.fireworks||s.fullPledCeleb)?6:0;
     s.dur = s.hold+s.climbDur+s.arrive+s.extra;
     s.loopDur = 2; // sway period
   }
@@ -364,6 +364,14 @@ function drawSlopeScale(c){
     c.beginPath(); c.moveTo(x,y); c.lineTo(x+nx*L,y+ny*L); c.stroke();
     if(major) c.fillText(String(v), x+nx*30, y+ny*30+5);
   }
+  // axis caption for export viewers, set along the slope
+  const rx=slopeX(104), ry=slopeY(rx);
+  c.save(); c.translate(rx+nx*52, ry+ny*52); c.rotate(ang);
+  c.font='800 13px Nunito, sans-serif'; c.textAlign='center';
+  c.lineWidth=4; c.lineJoin='round'; c.strokeStyle='rgba(255,255,255,.9)';
+  c.strokeText('RETURNS \u2192',0,0);
+  c.fillStyle='rgba(94,51,44,.85)'; c.fillText('RETURNS \u2192',0,0);
+  c.restore();
 }
 function drawBottomScale(c){
   c.strokeStyle='rgba(94,51,44,.8)'; c.lineWidth=2.5;
@@ -374,6 +382,8 @@ function drawBottomScale(c){
     c.beginPath(); c.moveTo(x,G.yBottom); c.lineTo(x,G.yBottom+7); c.stroke();
     c.fillText(m===0?'$0':'$'+m+'k', x, G.yLabel+8);
   }
+  c.font='800 12px Nunito, sans-serif'; c.fillStyle='rgba(94,51,44,.6)'; c.textAlign='left';
+  c.fillText('PLEDGED', G.x0-4, G.yLabel+26);
 }
 /* The campaign's concentric arc hills, revealed left of xm. */
 const HILLS=[
@@ -430,10 +440,12 @@ function star(c,x,y,r){
 function drawMaroonLine(c,xm){
   if(xm<=G.x0+0.5) return;
   const yTop=slopeY(xm);
-  c.strokeStyle='rgba(94,37,49,.22)'; c.lineWidth=11;
+  c.strokeStyle='rgba(255,255,255,.85)'; c.lineWidth=9; c.lineCap='round';
   c.beginPath(); c.moveTo(xm,G.yBottom-1); c.lineTo(xm,yTop); c.stroke();
-  c.strokeStyle=MAROON_DEEP; c.lineWidth=5;
+  c.strokeStyle=MAROON_DEEP; c.lineWidth=4.5;
   c.beginPath(); c.moveTo(xm,G.yBottom-1); c.lineTo(xm,yTop); c.stroke();
+  c.fillStyle=MAROON_DEEP; c.beginPath(); c.arc(xm,yTop,6,0,7); c.fill();
+  c.strokeStyle='#fff'; c.lineWidth=2; c.beginPath(); c.arc(xm,yTop,6,0,7); c.stroke();
 }
 function roundRect(c,x,y,w,h,r){
   c.beginPath(); c.moveTo(x+r,y);
@@ -561,6 +573,16 @@ function renderFrame(c,s,t){
   drawLogoPlate(c);
   drawClimber(c,st,t,lp);
   drawFireworks(c,st.fwT);
+  const ta=Math.max(st.celebT,st.fwT);
+  if(ta>=0){
+    const a = s.mode==='resting' ? 1 : clamp(ta/0.45,0,1);
+    c.save(); c.globalAlpha=a;
+    c.fillStyle='rgba(255,255,255,.95)'; roundRect(c,818,30,344,54,14); c.fill();
+    c.strokeStyle=LEAF; c.lineWidth=2.5; roundRect(c,818,30,344,54,14); c.stroke();
+    c.fillStyle=TEAL_DEEP; c.textAlign='center'; c.font="23px 'Alfa Slab One', serif";
+    c.fillText('Hope reached new heights!', 990, 65);
+    c.restore();
+  }
 }
 
 /* ============================================================
@@ -613,6 +635,18 @@ function scheduleCelebration(ac,dests,at,dur,withFireworks){
   const bells=[N.C6,N.E6,N.G6,N.G5,N.E5];
   for(let t=at+0.8; t<at+dur-0.3; t+=0.28+rnd()*0.5){
     tone(bells[Math.floor(rnd()*bells.length)], t, 0.9, 'sine', 0.16+rnd()*0.12);
+  }
+  // firework booms: sine pitch-drop thud
+  if(withFireworks){
+    for(let t=at+0.6; t<at+dur-0.6; t+=1.15){
+      const o=ac.createOscillator(),g=ac.createGain();
+      o.type='sine'; o.frequency.setValueAtTime(105,t);
+      o.frequency.exponentialRampToValueAtTime(42,t+0.55);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.3,t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001,t+0.7);
+      o.connect(g); g.connect(master); o.start(t); o.stop(t+0.75);
+    }
   }
   // firework pops: short filtered noise bursts
   if(withFireworks){
